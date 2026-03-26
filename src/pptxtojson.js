@@ -873,6 +873,9 @@ async function processPicNode(node, warpObj, source) {
   const order = node['attrs']['order']
   
   const rid = node['p:blipFill']['a:blip']['attrs']['r:embed']
+  
+  if (!rid || !resObj[rid]) return null
+
   const imgName = resObj[rid]['target']
   const imgFileExt = extractFileExtension(imgName).toLowerCase()
   const zip = warpObj['zip']
@@ -1248,14 +1251,14 @@ async function genChart(node, warpObj) {
   let refName = getTextByPathList(warpObj['slideResObj'], [rid, 'target'])
   if (!refName) refName = getTextByPathList(warpObj['layoutResObj'], [rid, 'target'])
   if (!refName) refName = getTextByPathList(warpObj['masterResObj'], [rid, 'target'])
-  if (!refName) return {}
+  if (!refName) return null
 
   const content = await readXmlFile(warpObj['zip'], refName)
   const plotArea = getTextByPathList(content, ['c:chartSpace', 'c:chart', 'c:plotArea'])
 
   const chart = getChartInfo(plotArea, warpObj)
 
-  if (!chart) return {}
+  if (!chart) return null
 
   const data = {
     type: 'chart',

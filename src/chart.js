@@ -2,6 +2,8 @@ import { eachElement, getTextByPathList } from './utils'
 import { applyTint } from './color'
 
 function extractChartColors(serNode, warpObj) {
+  if (!serNode) return []
+
   if (serNode.constructor !== Array) serNode = [serNode]
   const schemeClrs = []
   for (const node of serNode) {
@@ -87,6 +89,8 @@ function extractChartData(serNode) {
 export function getChartInfo(plotArea, warpObj) {
   let chart = null
   for (const key in plotArea) {
+    if (!plotArea[key]['c:ser']) continue
+
     switch (key) {
       case 'c:lineChart':
         chart = {

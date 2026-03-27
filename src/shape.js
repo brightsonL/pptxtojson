@@ -140,28 +140,31 @@ export function getCustomShapePath(custShapType, w, h) {
       })
     }
     if (arcToNodes) {
-      const arcToNodesAttrs = arcToNodes['attrs']
-      const order = arcToNodesAttrs['order']
-      const hR = arcToNodesAttrs['hR']
-      const wR = arcToNodesAttrs['wR']
-      const stAng = arcToNodesAttrs['stAng']
-      const swAng = arcToNodesAttrs['swAng']
-      let shftX = 0
-      let shftY = 0
-      const arcToPtNode = getTextByPathList(arcToNodes, ['a:pt', 'attrs'])
-      if (arcToPtNode) {
-        shftX = arcToPtNode['x']
-        shftY = arcToPtNode['y']
-      }
-      multiSapeAry.push({
-        type: 'arcTo',
-        hR: hR,
-        wR: wR,
-        stAng: stAng,
-        swAng: swAng,
-        shftX: shftX,
-        shftY: shftY,
-        order,
+      const arcToNodesAry = Array.isArray(arcToNodes) ? arcToNodes : [arcToNodes]
+      arcToNodesAry.forEach(arcToNodes => {
+        const arcToNodesAttrs = arcToNodes['attrs']
+        const order = arcToNodesAttrs['order']
+        const hR = arcToNodesAttrs['hR']
+        const wR = arcToNodesAttrs['wR']
+        const stAng = arcToNodesAttrs['stAng']
+        const swAng = arcToNodesAttrs['swAng']
+        let shftX = 0
+        let shftY = 0
+        const arcToPtNode = getTextByPathList(arcToNodes, ['a:pt', 'attrs'])
+        if (arcToPtNode) {
+          shftX = arcToPtNode['x']
+          shftY = arcToPtNode['y']
+        }
+        multiSapeAry.push({
+          type: 'arcTo',
+          hR,
+          wR,
+          stAng,
+          swAng,
+          shftX,
+          shftY,
+          order,
+        })
       })
     }
     if (closeNode) {

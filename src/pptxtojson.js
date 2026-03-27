@@ -1,13 +1,13 @@
 import JSZip from 'jszip'
 import { readXmlFile } from './readXmlFile'
 import { getBorder } from './border'
-import { getSlideBackgroundFill, getShapeFill, getSolidFill, getPicFill, getPicFilters } from './fill'
+import { getSlideBackgroundFill, getShapeFill, getSolidFill, getPicFill, getPicFilters, loadImageBase64 } from './fill'
 import { getChartInfo } from './chart'
 import { getVerticalAlign, getTextAutoFit } from './align'
 import { getPosition, getSize } from './position'
 import { genTextBody } from './text'
 import { getCustomShapePath, identifyShape } from './shape'
-import { extractFileExtension, base64ArrayBuffer, getTextByPathList, angleToDegrees, getMimeType, isVideoLink, escapeHtml, hasValidText, numberToFixed } from './utils'
+import { extractFileExtension, getTextByPathList, angleToDegrees, getMimeType, isVideoLink, escapeHtml, hasValidText, numberToFixed } from './utils'
 import { getShadow } from './shadow'
 import { getTableBorders, getTableCellParams, getTableRowParams } from './table'
 import { RATIO_EMUs_Points } from './constants'
@@ -18,6 +18,7 @@ import { getSmartArtTextData } from './diagram'
 
 export async function parse(file) {
   const slides = []
+  const loadedImages = {}
   
   const zip = await JSZip.loadAsync(file)
 
@@ -26,7 +27,7 @@ export async function parse(file) {
   const { themeContent, themeColors } = await getTheme(zip)
 
   for (const filename of filesInfo.slides) {
-    const singleSlide = await processSingleSlide(zip, filename, themeContent, defaultTextStyle)
+    const singleSlide = await processSingleSlide(zip, filename, themeContent, defaultTextStyle, loadedImages)
     slides.push(singleSlide)
   }
 
@@ -115,7 +116,7 @@ async function getTheme(zip) {
   return { themeContent, themeColors }
 }
 
-async function processSingleSlide(zip, sldFileName, themeContent, defaultTextStyle) {
+async function processSingleSlide(zip, sldFileName, themeContent, defaultTextStyle, loadedImages) {
   const resName = sldFileName.replace('slides/slide', 'slides/_rels/slide') + '.rels'
   const resContent = await readXmlFile(zip, resName)
   let relationshipArray = resContent['Relationships']['Relationship']
@@ -302,6 +303,7 @@ async function processSingleSlide(zip, sldFileName, themeContent, defaultTextSty
   const nodes = slideContent['p:sld']['p:cSld']['p:spTree']
   const warpObj = {
     zip,
+    loadedImages,
     slideLayoutContent,
     slideLayoutTables,
     slideMasterContent,
@@ -877,9 +879,7 @@ async function processPicNode(node, warpObj, source) {
   if (!rid || !resObj[rid]) return null
 
   const imgName = resObj[rid]['target']
-  const imgFileExt = extractFileExtension(imgName).toLowerCase()
   const zip = warpObj['zip']
-  const imgArrayBuffer = await zip.file(imgName).async('arraybuffer')
 
   let xfrmNode = node['p:spPr']['a:xfrm']
   if (!xfrmNode) {
@@ -887,10 +887,9 @@ async function processPicNode(node, warpObj, source) {
     if (idx) xfrmNode = getTextByPathList(warpObj['slideLayoutTables'], ['idxTable', idx, 'p:spPr', 'a:xfrm'])
   }
 
-  const mimeType = getMimeType(imgFileExt)
   const { top, left } = getPosition(xfrmNode, undefined, undefined)
   const { width, height } = getSize(xfrmNode, undefined, undefined)
-  const src = `data:${mimeType};base64,${base64ArrayBuffer(imgArrayBuffer)}`
+  const src = await loadImageBase64(imgName, warpObj)
 
   const isFlipV = getTextByPathList(xfrmNode, ['attrs', 'flipV']) === '1'
   const isFlipH = getTextByPathList(xfrmNode, ['attrs', 'flipH']) === '1'

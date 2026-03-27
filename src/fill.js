@@ -32,10 +32,30 @@ export function getFillType(node) {
   return fillType
 }
 
+export async function loadImageBase64(imgPath, warpObj) {
+  if (!imgPath) return ''
+
+  const normalizedPath = escapeHtml(imgPath)
+  const loadedImages = warpObj.loadedImages || {}
+  let img = loadedImages[normalizedPath]
+
+  if (!img) {
+    const imgExt = normalizedPath.split('.').pop()
+    if (imgExt === 'xml') return ''
+
+    const imgArrayBuffer = await warpObj['zip'].file(normalizedPath).async('arraybuffer')
+    const imgMimeType = getMimeType(imgExt)
+    img = `data:${imgMimeType};base64,${base64ArrayBuffer(imgArrayBuffer)}`
+    loadedImages[normalizedPath] = img
+    warpObj.loadedImages = loadedImages
+  }
+
+  return img
+}
+
 export async function getPicFill(type, node, warpObj) {
   if (!node) return ''
 
-  let img
   const rId = getTextByPathList(node, ['a:blip', 'attrs', 'r:embed'])
   let imgPath
   if (type === 'slideBg' || type === 'slide') {
@@ -55,22 +75,7 @@ export async function getPicFill(type, node, warpObj) {
   }
   if (!imgPath) return imgPath
 
-  img = getTextByPathList(warpObj, ['loaded-images', imgPath])
-  if (!img) {
-    imgPath = escapeHtml(imgPath)
-
-    const imgExt = imgPath.split('.').pop()
-    if (imgExt === 'xml') return ''
-
-    const imgArrayBuffer = await warpObj['zip'].file(imgPath).async('arraybuffer')
-    const imgMimeType = getMimeType(imgExt)
-    img = `data:${imgMimeType};base64,${base64ArrayBuffer(imgArrayBuffer)}`
-
-    const loadedImages = warpObj['loaded-images'] || {}
-    loadedImages[imgPath] = img
-    warpObj['loaded-images'] = loadedImages
-  }
-  return img
+  return await loadImageBase64(imgPath, warpObj)
 }
 
 export function getPicFillOpacity(node) {

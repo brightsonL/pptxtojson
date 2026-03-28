@@ -13,7 +13,9 @@ export interface ColorFill {
 export interface ImageFill {
   type: 'image'
   value: {
-    picBase64: string
+    ref: string
+    base64: string
+    blob: string
     opacity: number
   }
 }
@@ -108,7 +110,9 @@ export interface Image {
   top: number
   width: number
   height: number
-  src: string
+  ref: string
+  base64: string
+  blob: string
   rotate: number
   isFlipH: boolean
   isFlipV: boolean
@@ -232,8 +236,8 @@ export interface Video {
   top: number
   width: number
   height: number
-  blob?: string
-  src?: string
+  ref: string
+  blob: string
   order: number
 }
 
@@ -243,6 +247,7 @@ export interface Audio {
   top: number
   width: number
   height: number
+  ref: string
   blob: string
   order: number
 }
@@ -265,7 +270,9 @@ export interface Math {
   width: number
   height: number
   latex: string
+  picRef: string
   picBase64: string
+  picBlob: string
   order: number
   text?: string
 }
@@ -301,8 +308,9 @@ export interface Slide {
 }
 
 export interface Options {
-  slideFactor?: number
-  fontsizeFactor?: number
+  imageMode?: 'base64' | 'blob' | 'both' | 'none'
+  videoMode?: 'blob' | 'none'
+  audioMode?: 'blob' | 'none'
 }
 
 export const parse: (file: ArrayBuffer, options?: Options) => Promise<{

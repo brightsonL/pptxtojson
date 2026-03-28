@@ -432,7 +432,11 @@
             loadingOverlay.classList.add('show')
 
             try {
-              const json = await pptxtojson.parse(e.target.result)
+              const json = await pptxtojson.parse(e.target.result, {
+                imageMode: 'both',
+                videoMode: 'blob',
+                audioMode: 'blob',
+              })
               editor.set(json)
               console.log(json)
               jsonString = JSON.stringify(json, null, 2)

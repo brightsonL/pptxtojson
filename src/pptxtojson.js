@@ -1,13 +1,13 @@
 import JSZip from 'jszip'
 import { readXmlFile } from './readXmlFile'
 import { getBorder } from './border'
-import { getSlideBackgroundFill, getShapeFill, getSolidFill, getPicFill, getPicFilters, loadImageBase64 } from './fill'
+import { getSlideBackgroundFill, getShapeFill, getSolidFill, getPicFill, getPicFilters, getImageData, getVideoData, getAudioData } from './fill'
 import { getChartInfo } from './chart'
 import { getVerticalAlign, getTextAutoFit } from './align'
 import { getPosition, getSize } from './position'
 import { genTextBody } from './text'
 import { getCustomShapePath, identifyShape } from './shape'
-import { extractFileExtension, getTextByPathList, angleToDegrees, getMimeType, isVideoLink, escapeHtml, hasValidText, numberToFixed } from './utils'
+import { extractFileExtension, getTextByPathList, angleToDegrees, isVideoLink, escapeHtml, hasValidText, numberToFixed } from './utils'
 import { getShadow } from './shadow'
 import { getTableBorders, getTableCellParams, getTableRowParams } from './table'
 import { RATIO_EMUs_Points } from './constants'
@@ -16,9 +16,17 @@ import { getShapePath } from './shapePath'
 import { parseTransition, findTransitionNode } from './animation'
 import { getSmartArtTextData } from './diagram'
 
-export async function parse(file) {
+export async function parse(file, options = {}) {
   const slides = []
   const loadedImages = {}
+  const loadedVideos = {}
+  const loadedAudios = {}
+  const parseOptions = {
+    ...options,
+    imageMode: options.imageMode || 'base64',
+    videoMode: options.videoMode || 'none',
+    audioMode: options.audioMode || 'none',
+  }
   
   const zip = await JSZip.loadAsync(file)
 
@@ -27,7 +35,7 @@ export async function parse(file) {
   const { themeContent, themeColors } = await getTheme(zip)
 
   for (const filename of filesInfo.slides) {
-    const singleSlide = await processSingleSlide(zip, filename, themeContent, defaultTextStyle, loadedImages)
+    const singleSlide = await processSingleSlide(zip, filename, themeContent, defaultTextStyle, loadedImages, loadedVideos, loadedAudios, parseOptions)
     slides.push(singleSlide)
   }
 
@@ -116,7 +124,7 @@ async function getTheme(zip) {
   return { themeContent, themeColors }
 }
 
-async function processSingleSlide(zip, sldFileName, themeContent, defaultTextStyle, loadedImages) {
+async function processSingleSlide(zip, sldFileName, themeContent, defaultTextStyle, loadedImages, loadedVideos, loadedAudios, options) {
   const resName = sldFileName.replace('slides/slide', 'slides/_rels/slide') + '.rels'
   const resContent = await readXmlFile(zip, resName)
   let relationshipArray = resContent['Relationships']['Relationship']
@@ -304,6 +312,9 @@ async function processSingleSlide(zip, sldFileName, themeContent, defaultTextSty
   const warpObj = {
     zip,
     loadedImages,
+    loadedVideos,
+    loadedAudios,
+    options,
     slideLayoutContent,
     slideLayoutTables,
     slideMasterContent,
@@ -583,7 +594,7 @@ async function processMathNode(node, warpObj, source) {
   const latex = latexFormart(parseOMath(oMath))
 
   const blipFill = getTextByPathList(fallback, ['p:sp', 'p:spPr', 'a:blipFill'])
-  const picBase64 = await getPicFill(source, blipFill, warpObj)
+  const picFill = await getPicFill(source, blipFill, warpObj)
 
   let text = ''
   if (getTextByPathList(choice, ['p:sp', 'p:txBody', 'a:p', 'a:r'])) {
@@ -598,7 +609,9 @@ async function processMathNode(node, warpObj, source) {
     width, 
     height,
     latex,
-    picBase64,
+    picRef: picFill.ref,
+    picBase64: picFill.base64,
+    picBlob: picFill.blob,
     text,
     order,
   }
@@ -879,7 +892,6 @@ async function processPicNode(node, warpObj, source) {
   if (!rid || !resObj[rid]) return null
 
   const imgName = resObj[rid]['target']
-  const zip = warpObj['zip']
 
   let xfrmNode = node['p:spPr']['a:xfrm']
   if (!xfrmNode) {
@@ -889,7 +901,7 @@ async function processPicNode(node, warpObj, source) {
 
   const { top, left } = getPosition(xfrmNode, undefined, undefined)
   const { width, height } = getSize(xfrmNode, undefined, undefined)
-  const src = await loadImageBase64(imgName, warpObj)
+  const imageData = await getImageData(imgName, warpObj)
 
   const isFlipV = getTextByPathList(xfrmNode, ['attrs', 'flipV']) === '1'
   const isFlipH = getTextByPathList(xfrmNode, ['attrs', 'flipH']) === '1'
@@ -899,7 +911,11 @@ async function processPicNode(node, warpObj, source) {
   if (rotateNode) rotate = angleToDegrees(rotateNode)
 
   const videoNode = getTextByPathList(node, ['p:nvPicPr', 'p:nvPr', 'a:videoFile'])
-  let videoRid, videoFile, videoFileExt, videoMimeType, uInt8ArrayVideo, videoBlob
+  let videoRid, videoFile, videoFileExt
+  let videoData = {
+    ref: '',
+    blob: '',
+  }
   let isVdeoLink = false
 
   if (videoNode) {
@@ -912,24 +928,41 @@ async function processPicNode(node, warpObj, source) {
     else {
       videoFileExt = extractFileExtension(videoFile).toLowerCase()
       if (videoFileExt === 'mp4' || videoFileExt === 'webm' || videoFileExt === 'ogg') {
-        uInt8ArrayVideo = await zip.file(videoFile).async('arraybuffer')
-        videoMimeType = getMimeType(videoFileExt)
-        videoBlob = URL.createObjectURL(new Blob([uInt8ArrayVideo], {
-          type: videoMimeType
-        }))
+        videoData = await getVideoData(videoFile, warpObj)
+      }
+      else {
+        videoData = {
+          ref: videoFile,
+          blob: '',
+        }
+      }
+    }
+    if (isVdeoLink) {
+      videoData = {
+        ref: videoFile,
+        blob: '',
       }
     }
   }
 
   const audioNode = getTextByPathList(node, ['p:nvPicPr', 'p:nvPr', 'a:audioFile'])
-  let audioRid, audioFile, audioFileExt, uInt8ArrayAudio, audioBlob
+  let audioRid, audioFile, audioFileExt
+  let audioData = {
+    ref: '',
+    blob: '',
+  }
   if (audioNode) {
     audioRid = audioNode['attrs']['r:link']
     audioFile = resObj[audioRid]['target']
     audioFileExt = extractFileExtension(audioFile).toLowerCase()
     if (audioFileExt === 'mp3' || audioFileExt === 'wav' || audioFileExt === 'ogg') {
-      uInt8ArrayAudio = await zip.file(audioFile).async('arraybuffer')
-      audioBlob = URL.createObjectURL(new Blob([uInt8ArrayAudio]))
+      audioData = await getAudioData(audioFile, warpObj)
+    }
+    else {
+      audioData = {
+        ref: audioFile,
+        blob: '',
+      }
     }
   }
 
@@ -941,7 +974,8 @@ async function processPicNode(node, warpObj, source) {
       width, 
       height,
       rotate,
-      blob: videoBlob,
+      ref: videoData.ref,
+      blob: videoData.blob,
       order,
     }
   } 
@@ -953,7 +987,8 @@ async function processPicNode(node, warpObj, source) {
       width, 
       height,
       rotate,
-      src: videoFile,
+      ref: videoData.ref,
+      blob: videoData.blob,
       order,
     }
   }
@@ -965,7 +1000,8 @@ async function processPicNode(node, warpObj, source) {
       width, 
       height,
       rotate,
-      blob: audioBlob,
+      ref: audioData.ref,
+      blob: audioData.blob,
       order,
     }
   }
@@ -995,14 +1031,16 @@ async function processPicNode(node, warpObj, source) {
 
   const filters = getPicFilters(node['p:blipFill'])
 
-  const imageData = {
+  const imageDataJson = {
     type: 'image',
     top,
     left,
     width,
     height,
     rotate,
-    src,
+    ref: imageData.ref,
+    base64: imageData.base64,
+    blob: imageData.blob,
     isFlipV,
     isFlipH,
     order,
@@ -1014,10 +1052,10 @@ async function processPicNode(node, warpObj, source) {
     borderStrokeDasharray: strokeDasharray,
   }
 
-  if (filters) imageData.filters = filters
-  if (link) imageData.link = link
+  if (filters) imageDataJson.filters = filters
+  if (link) imageDataJson.link = link
 
-  return imageData
+  return imageDataJson
 }
 
 async function processGraphicFrameNode(node, warpObj, source) {

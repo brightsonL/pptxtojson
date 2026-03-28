@@ -32,29 +32,126 @@ export function getFillType(node) {
   return fillType
 }
 
-export async function loadImageBase64(imgPath, warpObj) {
-  if (!imgPath) return ''
+function createImageData(ref = '') {
+  return {
+    ref,
+    base64: '',
+    blob: '',
+  }
+}
 
-  const normalizedPath = escapeHtml(imgPath)
-  const loadedImages = warpObj.loadedImages || {}
-  let img = loadedImages[normalizedPath]
+function createMediaData(ref = '') {
+  return {
+    ref,
+    blob: '',
+  }
+}
 
-  if (!img) {
-    const imgExt = normalizedPath.split('.').pop()
-    if (imgExt === 'xml') return ''
+function getMediaCache(warpObj, cacheKey) {
+  const cache = warpObj[cacheKey] || {}
+  warpObj[cacheKey] = cache
+  return cache
+}
 
-    const imgArrayBuffer = await warpObj['zip'].file(normalizedPath).async('arraybuffer')
-    const imgMimeType = getMimeType(imgExt)
-    img = `data:${imgMimeType};base64,${base64ArrayBuffer(imgArrayBuffer)}`
-    loadedImages[normalizedPath] = img
-    warpObj.loadedImages = loadedImages
+async function loadMedia(filePath, warpObj, cacheKey, mode = 'base64') {
+  if (!filePath || (mode !== 'base64' && mode !== 'blob')) return ''
+
+  const normalizedPath = escapeHtml(filePath)
+  const cache = getMediaCache(warpObj, cacheKey)
+  const cacheItem = cache[normalizedPath] || { base64: '', blob: '' }
+  cache[normalizedPath] = cacheItem
+
+  if (cacheItem[mode]) return cacheItem[mode]
+
+  const fileExt = normalizedPath.split('.').pop().toLowerCase()
+  if (fileExt === 'xml') return ''
+
+  const arrayBuffer = await warpObj['zip'].file(normalizedPath).async('arraybuffer')
+  const mimeType = getMimeType(fileExt)
+
+  if (mode === 'base64') {
+    cacheItem.base64 = `data:${mimeType};base64,${base64ArrayBuffer(arrayBuffer)}`
+  }
+  else if (mode === 'blob') {
+    cacheItem.blob = URL.createObjectURL(new Blob([arrayBuffer], mimeType ? {
+      type: mimeType
+    } : undefined))
   }
 
-  return img
+  return cacheItem[mode]
+}
+
+export async function loadImage(imgPath, warpObj, mode = 'base64') {
+  return await loadMedia(imgPath, warpObj, 'loadedImages', mode)
+}
+
+export async function loadVideo(videoPath, warpObj, mode = 'blob') {
+  if (mode !== 'blob') return ''
+  return await loadMedia(videoPath, warpObj, 'loadedVideos', 'blob')
+}
+
+export async function loadAudio(audioPath, warpObj, mode = 'blob') {
+  if (mode !== 'blob') return ''
+  return await loadMedia(audioPath, warpObj, 'loadedAudios', 'blob')
+}
+
+function getImageMode(warpObj) {
+  const imageMode = getTextByPathList(warpObj, ['options', 'imageMode'])
+  if (imageMode === 'blob' || imageMode === 'both' || imageMode === 'none') return imageMode
+  return 'base64'
+}
+
+function getVideoMode(warpObj) {
+  const videoMode = getTextByPathList(warpObj, ['options', 'videoMode'])
+  if (videoMode === 'blob') return 'blob'
+  return 'none'
+}
+
+function getAudioMode(warpObj) {
+  const audioMode = getTextByPathList(warpObj, ['options', 'audioMode'])
+  if (audioMode === 'blob') return 'blob'
+  return 'none'
+}
+
+export async function getImageData(imgPath, warpObj) {
+  const imageData = createImageData(imgPath || '')
+  if (!imgPath) return imageData
+
+  const imageMode = getImageMode(warpObj)
+  if (imageMode === 'base64' || imageMode === 'both') {
+    imageData.base64 = await loadImage(imgPath, warpObj, 'base64')
+  }
+  if (imageMode === 'blob' || imageMode === 'both') {
+    imageData.blob = await loadImage(imgPath, warpObj, 'blob')
+  }
+
+  return imageData
+}
+
+export async function getVideoData(videoPath, warpObj) {
+  const videoData = createMediaData(videoPath || '')
+  if (!videoPath) return videoData
+
+  if (getVideoMode(warpObj) === 'blob') {
+    videoData.blob = await loadVideo(videoPath, warpObj, 'blob')
+  }
+
+  return videoData
+}
+
+export async function getAudioData(audioPath, warpObj) {
+  const audioData = createMediaData(audioPath || '')
+  if (!audioPath) return audioData
+
+  if (getAudioMode(warpObj) === 'blob') {
+    audioData.blob = await loadAudio(audioPath, warpObj, 'blob')
+  }
+
+  return audioData
 }
 
 export async function getPicFill(type, node, warpObj) {
-  if (!node) return ''
+  if (!node) return createImageData()
 
   const rId = getTextByPathList(node, ['a:blip', 'attrs', 'r:embed'])
   let imgPath
@@ -73,9 +170,9 @@ export async function getPicFill(type, node, warpObj) {
   else if (type === 'diagramBg') {
     imgPath = getTextByPathList(warpObj, ['diagramResObj', rId, 'target'])
   }
-  if (!imgPath) return imgPath
+  if (!imgPath) return createImageData()
 
-  return await loadImageBase64(imgPath, warpObj)
+  return await getImageData(imgPath, warpObj)
 }
 
 export function getPicFillOpacity(node) {
@@ -164,7 +261,7 @@ export function getPicFilters(node) {
 }
 
 export async function getBgPicFill(bgPr, sorce, warpObj) {
-  const picBase64 = await getPicFill(sorce, bgPr['a:blipFill'], warpObj)
+  const picFill = await getPicFill(sorce, bgPr['a:blipFill'], warpObj)
   const aBlipNode = bgPr['a:blipFill']['a:blip']
 
   const aphaModFixNode = getTextByPathList(aBlipNode, ['a:alphaModFix', 'attrs'])
@@ -174,7 +271,9 @@ export async function getBgPicFill(bgPr, sorce, warpObj) {
   }
 
   return {
-    picBase64,
+    ref: picFill.ref,
+    base64: picFill.base64,
+    blob: picFill.blob,
     opacity,
   }
 }
@@ -622,10 +721,12 @@ export async function getShapeFill(node, warpObj, source, groupHierarchy = []) {
   }
   else if (fillType === 'PIC_FILL') {
     const shpFill = node['p:spPr']['a:blipFill']
-    const picBase64 = await getPicFill(source, shpFill, warpObj)
+    const picFill = await getPicFill(source, shpFill, warpObj)
     const opacity = getPicFillOpacity(shpFill)
     fillValue = {
-      picBase64,
+      ref: picFill.ref,
+      base64: picFill.base64,
+      blob: picFill.blob,
       opacity,
     }
     type = 'image'
@@ -682,13 +783,15 @@ async function findFillInGroupHierarchy(groupHierarchy, warpObj, source) {
     }
     else if (fillType === 'PIC_FILL') {
       const shpFill = grpSpPr['a:blipFill']
-      const picBase64 = await getPicFill(source, shpFill, warpObj)
+      const picFill = await getPicFill(source, shpFill, warpObj)
       const opacity = getPicFillOpacity(shpFill)
-      if (picBase64) {
+      if (picFill.ref || picFill.base64 || picFill.blob) {
         return {
           type: 'image',
           value: {
-            picBase64,
+            ref: picFill.ref,
+            base64: picFill.base64,
+            blob: picFill.blob,
             opacity,
           },
         }

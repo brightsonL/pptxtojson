@@ -27,7 +27,6 @@
 
 ### 📏 长度值单位
 输出的JSON中，所有数值长度值单位都为`pt`（point）
-> 注意：在0.x版本中，所有输出的长度值单位都是px（像素）
 
 # 🔨安装
 ```
@@ -35,8 +34,11 @@ npm install pptxtojson
 ```
 
 # 💿用法
+```javascript
+parse(file, options = {})
+```
 
-### 浏览器
+### 浏览器示例
 ```html
 <input type="file" accept="application/vnd.openxmlformats-officedocument.presentationml.presentation"/>
 ```
@@ -49,14 +51,18 @@ document.querySelector('input').addEventListener('change', evt => {
 	
 	const reader = new FileReader()
 	reader.onload = async e => {
-		const json = await parse(e.target.result)
+		const json = await parse(e.target.result, {
+			imageMode: 'base64',
+			videoMode: 'none',
+			audioMode: 'none',
+		})
 		console.log(json)
 	}
 	reader.readAsArrayBuffer(file)
 })
 ```
 
-### Node.js(实验性，1.5.0以上版本)
+### Node.js 示例（实验性，1.5.0以上版本）
 ```javascript
 const pptxtojson = require('pptxtojson/dist/index.cjs')
 const fs = require('fs')
@@ -64,7 +70,11 @@ const fs = require('fs')
 async function func() {
   const buffer = fs.readFileSync('test.pptx')
 
-  const json = await pptxtojson.parse(buffer.buffer)
+  const json = await pptxtojson.parse(buffer.buffer, {
+    imageMode: 'base64',
+    videoMode: 'none',
+    audioMode: 'none',
+  })
   console.log(json)
 }
 
@@ -120,7 +130,33 @@ func()
 }
 ```
 
-# 📕 完整功能支持
+# 🎲 Options 配置说明
+> options 为可选参数，不传时使用默认配置。
+
+- `imageMode`：控制图片资源的解析方式，可选值为 `base64`、`blob`、`both`、`none`，默认值为 `base64`。
+	- `base64` 表示仅解析 `base64`。
+	- `blob` 表示仅解析 `blob`。
+	- `both` 表示同时解析 `base64` 和 `blob`。
+	- `none` 表示不解析图片内容。
+
+- `videoMode`：控制视频资源的解析方式，可选值为 `blob`、`none`，默认值为 `none`。
+  - `blob` 表示解析视频 `blob`。
+  - `none` 表示不解析视频内容。
+
+- `audioMode`：控制音频资源的解析方式，可选值为 `blob`、`none`，默认值为 `none`。
+  - `blob` 表示解析音频 `blob`。
+  - `none` 表示不解析音频内容。
+
+# 🕰️ 旧版本说明
+- 在0.x版本中，所有输出的长度值单位都是px（像素）
+- 在1.x及以下版本：
+	- 图片元素使用 `src` 字段返回 base64 数据；
+	- 图片填充仅返回 `picBase64`；
+	- 视频元素可能返回 `blob` 或 `src`；
+	- 音频元素仅返回 `blob`；
+	- 公式图片仅返回 `picBase64`；
+
+# 📕 解析属性
 
 - 幻灯片主题色 `themeColors`
 
@@ -182,7 +218,9 @@ func()
 			- 非实线边框样式 `borderStrokeDasharray`
 			- 裁剪形状 `geom`
 			- 裁剪范围 `rect`
-			- 图片地址（base64） `src`
+			- 资源引用路径 `ref`
+			- 图片base64 `base64`
+			- 图片blob `blob`
 			- 旋转角度 `rotate`
 			- 滤镜 `filters`
 			- 超链接 `link`
@@ -243,8 +281,8 @@ func()
 			- 垂直坐标 `top`
 			- 宽度 `width`
 			- 高度 `height`
+			- 资源引用路径 `ref`
 			- 视频blob `blob`
-			- 视频src `src`
 
 		- 音频
 			- 类型 `type='audio'`
@@ -252,6 +290,7 @@ func()
 			- 垂直坐标 `top`
 			- 宽度 `width`
 			- 高度 `height`
+			- 资源引用路径 `ref`
 			- 音频blob `blob`
 
 		- 公式
@@ -260,7 +299,9 @@ func()
 			- 垂直坐标 `top`
 			- 宽度 `width`
 			- 高度 `height`
-			- 公式图片 `picBase64`
+			- 公式图片引用路径 `picRef`
+			- 公式图片base64 `picBase64`
+			- 公式图片blob `picBlob`
 			- LaTeX表达式（仅支持常见结构） `latex`
 			- 文本（文本和公式混排时存在） `text`
 

@@ -14,7 +14,7 @@ import { RATIO_EMUs_Points } from './constants'
 import { findOMath, latexFormart, parseOMath } from './math'
 import { getShapePath } from './shapePath'
 import { parseTransition, findTransitionNode } from './animation'
-import { getSmartArtTextData } from './diagram'
+import { getDiagramNodeContext, getSmartArtTextData } from './diagram'
 
 export async function parse(file, options = {}) {
   const slides = []
@@ -134,13 +134,10 @@ async function processSingleSlide(zip, sldFileName, themeContent, defaultTextSty
   let layoutFilename = ''
   let masterFilename = ''
   let themeFilename = ''
-  let diagramFilename = ''
-  const diagramFiles = {}
   const slideResObj = {}
   const layoutResObj = {}
   const masterResObj = {}
   const themeResObj = {}
-  const diagramResObj = {}
 
   for (const relationshipArrayItem of relationshipArray) {
     const relType = relationshipArrayItem['attrs']['Type'].replace('http://schemas.openxmlformats.org/officeDocument/2006/relationships/', '')
@@ -167,17 +164,10 @@ async function processSingleSlide(zip, sldFileName, themeContent, defaultTextSty
         }
         break
       case 'http://schemas.microsoft.com/office/2007/relationships/diagramDrawing':
-        diagramFilename = relTarget
-        slideResObj[relationshipArrayItem['attrs']['Id']] = {
-          type: relType,
-          target: relTarget
-        }
-        break
       case 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramData':
       case 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramLayout':
       case 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramQuickStyle':
       case 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramColors':
-        diagramFiles[relationshipArrayItem['attrs']['Id']] = relTarget
         slideResObj[relationshipArrayItem['attrs']['Id']] = {
           type: relType,
           target: relTarget
@@ -266,45 +256,6 @@ async function processSingleSlide(zip, sldFileName, themeContent, defaultTextSty
     }
   }
 
-  const diagramContent = {
-    data: null,
-    layout: null,
-    quickStyle: null,
-    colors: null,
-    drawing: null
-  }
-  let digramFileContent = {}
-  if (diagramFilename) {
-    const diagName = diagramFilename.split('/').pop()
-    const diagramResFileName = diagramFilename.replace(diagName, '_rels/' + diagName) + '.rels'
-    digramFileContent = await readXmlFile(zip, diagramFilename)
-    if (digramFileContent) {
-      const digramFileContentObjToStr = JSON.stringify(digramFileContent).replace(/dsp:/g, 'p:')
-      digramFileContent = JSON.parse(digramFileContentObjToStr)
-    }
-    const digramResContent = await readXmlFile(zip, diagramResFileName)
-    if (digramResContent) {
-      relationshipArray = digramResContent['Relationships']['Relationship']
-      if (relationshipArray.constructor !== Array) relationshipArray = [relationshipArray]
-      for (const relationshipArrayItem of relationshipArray) {
-        diagramResObj[relationshipArrayItem['attrs']['Id']] = {
-          'type': relationshipArrayItem['attrs']['Type'].replace('http://schemas.openxmlformats.org/officeDocument/2006/relationships/', ''),
-          'target': relationshipArrayItem['attrs']['Target'].replace('../', 'ppt/')
-        }
-      }
-    }
-  }
-
-  if (Object.values(diagramFiles).length > 0) {
-    for (const filePath of Object.values(diagramFiles)) {
-      const content = await readXmlFile(zip, filePath)
-      if (filePath.includes('/data')) diagramContent.data = content
-      else if (filePath.includes('/layout')) diagramContent.layout = content
-      else if (filePath.includes('/quickStyle')) diagramContent.quickStyle = content
-      else if (filePath.includes('/colors')) diagramContent.colors = content
-    }
-  }
-
   const tableStyles = await readXmlFile(zip, 'ppt/tableStyles.xml')
 
   const slideContent = await readXmlFile(zip, sldFileName)
@@ -327,9 +278,7 @@ async function processSingleSlide(zip, sldFileName, themeContent, defaultTextSty
     masterResObj,
     themeContent,
     themeResObj,
-    digramFileContent,
-    diagramResObj,
-    diagramContent,
+    diagramFileCache: {},
     defaultTextStyle,
   }
   const layoutElements = await getLayoutElements(warpObj)
@@ -1322,20 +1271,21 @@ async function genDiagram(node, warpObj) {
   const xfrmNode = getTextByPathList(node, ['p:xfrm'])
   const { left, top } = getPosition(xfrmNode, undefined, undefined)
   const { width, height } = getSize(xfrmNode, undefined, undefined)
-  
-  const dgmDrwSpArray = getTextByPathList(warpObj['digramFileContent'], ['p:drawing', 'p:spTree', 'p:sp'])
+
+  const diagramWarpObj = await getDiagramNodeContext(node, warpObj)
+  const dgmDrwSpArray = getTextByPathList(diagramWarpObj['digramFileContent'], ['p:drawing', 'p:spTree', 'p:sp'])
   const elements = []
   let textList = []
   if (dgmDrwSpArray) {
     const spList = Array.isArray(dgmDrwSpArray) ? dgmDrwSpArray : [dgmDrwSpArray]
 
     for (const item of spList) {
-      const el = await processSpNode(item, warpObj, 'diagramBg')
+      const el = await processSpNode(item, diagramWarpObj, 'diagramBg')
       if (el) elements.push(el)
     }
   }
-  else if (warpObj.diagramContent && warpObj.diagramContent.data) {
-    textList = getSmartArtTextData(warpObj.diagramContent.data)
+  if (diagramWarpObj.diagramContent && diagramWarpObj.diagramContent.data) {
+    textList = getSmartArtTextData(diagramWarpObj.diagramContent.data)
   }
 
   return {

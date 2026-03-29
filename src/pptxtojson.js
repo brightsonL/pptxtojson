@@ -479,7 +479,7 @@ function indexNodes(content) {
 
         if (id) idTable[id] = targetNodeItem
         if (idx) idxTable[idx] = targetNodeItem
-        if (type) typeTable[type] = targetNodeItem
+        if (type && !typeTable[type]) typeTable[type] = targetNodeItem
       }
     } 
     else {
@@ -490,7 +490,7 @@ function indexNodes(content) {
 
       if (id) idTable[id] = targetNode
       if (idx) idxTable[idx] = targetNode
-      if (type) typeTable[type] = targetNode
+      if (type && !typeTable[type]) typeTable[type] = targetNode
     }
   }
 

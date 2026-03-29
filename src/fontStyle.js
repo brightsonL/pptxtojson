@@ -44,16 +44,25 @@ function appendMasterTextStyleNodes(styleNodes, type, lvl, slideMasterTextStyles
   }
 }
 
-function getFontStyleNodes(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl) {
+function getBaseFontStyleNodes(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, lvl) {
   const styleNodes = []
+  const runStyleNode = getTextByPathList(node, ['a:rPr'])
 
-  pushStyleNode(styleNodes, getTextByPathList(node, ['a:rPr']))
-  pushStyleNode(styleNodes, getTextByPathList(pNode, ['a:endParaRPr']))
+  pushStyleNode(styleNodes, runStyleNode)
+  if (!runStyleNode) {
+    pushStyleNode(styleNodes, getTextByPathList(pNode, ['a:endParaRPr']))
+  }
   pushStyleNode(styleNodes, getTextByPathList(pNode, ['a:pPr', 'a:defRPr']))
 
   appendTextBodyStyleNodes(styleNodes, textBodyNode, lvl)
   appendShapeStyleNodes(styleNodes, slideLayoutSpNode, lvl)
   appendShapeStyleNodes(styleNodes, slideMasterSpNode, lvl)
+
+  return styleNodes
+}
+
+function getFontStyleNodes(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl) {
+  const styleNodes = getBaseFontStyleNodes(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, lvl)
   appendMasterTextStyleNodes(styleNodes, type, lvl, slideMasterTextStyles)
 
   return styleNodes
@@ -148,7 +157,7 @@ export function getFontType(node, pNode, textBodyNode, slideLayoutSpNode, slideM
 }
 
 export function getFontColor(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl, pFontStyle, warpObj) {
-  const styleNodes = getFontStyleNodes(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl)
+  const styleNodes = getBaseFontStyleNodes(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, lvl)
   let color = getFontColorFromStyleNodes(styleNodes, warpObj)
 
   if (!color) {
@@ -163,6 +172,11 @@ export function getFontColor(node, pNode, textBodyNode, slideLayoutSpNode, slide
     }
   }
 
+  if (!color) {
+    appendMasterTextStyleNodes(styleNodes, type, lvl, slideMasterTextStyles)
+    color = getFontColorFromStyleNodes(styleNodes, warpObj)
+  }
+
   return color || ''
 }
 
@@ -172,9 +186,6 @@ export function getFontSize(node, pNode, textBodyNode, slideLayoutSpNode, slideM
   let fontSize = sz ? parseInt(sz) / 100 : undefined
 
   if ((isNaN(fontSize) || !fontSize) && (type === 'dt' || type === 'sldNum')) fontSize = 12
-
-  const baseline = getFontAttr(styleNodes, 'baseline')
-  if (baseline && !isNaN(fontSize)) fontSize -= 10
 
   fontSize = (isNaN(fontSize) || !fontSize) ? 18 : fontSize
 
@@ -210,7 +221,7 @@ export function getFontSpace(node, pNode, textBodyNode, slideLayoutSpNode, slide
 export function getFontSubscript(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl) {
   const styleNodes = getFontStyleNodes(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl)
   const baseline = getFontAttr(styleNodes, 'baseline')
-  if (!baseline) return ''
+  if (!baseline || parseInt(baseline) === 0) return ''
   return parseInt(baseline) > 0 ? 'super' : 'sub'
 }
 

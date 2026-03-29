@@ -50,7 +50,7 @@ export function genTextBody(textBodyNode, spNode, slideLayoutSpNode, slideMaster
       }
     }
 
-    const align = getHorizontalAlign(pNode, spNode, type, warpObj)
+    const align = getHorizontalAlign(pNode, spNode, type, slideLayoutSpNode, slideMasterSpNode, warpObj)
     const spacing = getParagraphSpacing(pNode)
 
     let styleText = `text-align: ${align};`
@@ -164,7 +164,6 @@ export function genSpanElement(node, pNode, textBodyNode, pFontStyle, slideLayou
 }
 
 export function getSpanStyleInfo(node, pNode, textBodyNode, pFontStyle, slideLayoutSpNode, slideMasterSpNode, type, warpObj) {
-  const lstStyle = textBodyNode['a:lstStyle']
   const slideMasterTextStyles = warpObj['slideMasterTextStyles']
 
   let lvl = 1
@@ -177,16 +176,16 @@ export function getSpanStyleInfo(node, pNode, textBodyNode, pFontStyle, slideLay
   if (typeof text !== 'string') text = '&nbsp;'
 
   let styleText = ''
-  const fontColor = getFontColor(node, pNode, lstStyle, pFontStyle, lvl, warpObj)
-  const fontSize = getFontSize(node, slideLayoutSpNode, type, slideMasterTextStyles, textBodyNode, pNode)
-  const fontType = getFontType(node, type, warpObj, slideLayoutSpNode, slideMasterSpNode, slideMasterTextStyles)
-  const fontBold = getFontBold(node)
-  const fontItalic = getFontItalic(node)
-  const fontDecoration = getFontDecoration(node)
-  const fontDecorationLine = getFontDecorationLine(node)
-  const fontSpace = getFontSpace(node)
-  const shadow = getFontShadow(node, warpObj)
-  const subscript = getFontSubscript(node)
+  const fontColor = getFontColor(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl, pFontStyle, warpObj)
+  const fontSize = getFontSize(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl)
+  const fontType = getFontType(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl, warpObj)
+  const fontBold = getFontBold(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl)
+  const fontItalic = getFontItalic(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl)
+  const fontDecoration = getFontDecoration(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl)
+  const fontDecorationLine = getFontDecorationLine(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl)
+  const fontSpace = getFontSpace(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl)
+  const shadow = getFontShadow(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl, warpObj)
+  const subscript = getFontSubscript(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl)
 
   if (fontColor) {
     if (typeof fontColor === 'string') styleText += `color: ${fontColor};`

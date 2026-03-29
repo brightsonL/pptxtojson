@@ -1,29 +1,44 @@
 import { getTextByPathList } from './utils'
 
-export function getHorizontalAlign(node, pNode, type, warpObj) {
+function getParagraphLevel(node) {
+  let lvlIdx = 1
+  const lvlNode = getTextByPathList(node, ['a:pPr', 'attrs', 'lvl'])
+  if (lvlNode !== undefined) lvlIdx = parseInt(lvlNode) + 1
+  return lvlIdx
+}
+
+function getAlignFromTextNode(node, lvlStr) {
+  if (!node) return ''
+
+  let algn = getTextByPathList(node, ['p:txBody', 'a:lstStyle', lvlStr, 'attrs', 'algn'])
+  if (!algn) algn = getTextByPathList(node, ['p:txBody', 'a:p', 'a:pPr', 'attrs', 'algn'])
+
+  return algn || ''
+}
+
+export function getHorizontalAlign(node, pNode, type, slideLayoutSpNode, slideMasterSpNode, warpObj) {
   let algn = getTextByPathList(node, ['a:pPr', 'attrs', 'algn'])
-  if (!algn) algn = getTextByPathList(pNode, ['a:pPr', 'attrs', 'algn'])
+
+  if (!algn) algn = getTextByPathList(pNode, ['p:txBody', 'a:p', 'a:pPr', 'attrs', 'algn'])
 
   if (!algn) {
-    if (type === 'title' || type === 'ctrTitle' || type === 'subTitle') {
-      let lvlIdx = 1
-      const lvlNode = getTextByPathList(pNode, ['a:pPr', 'attrs', 'lvl'])
-      if (lvlNode) {
-        lvlIdx = parseInt(lvlNode) + 1
-      }
-      const lvlStr = 'a:lvl' + lvlIdx + 'pPr'
-      algn = getTextByPathList(warpObj, ['slideLayoutTables', 'typeTable', type, 'p:txBody', 'a:lstStyle', lvlStr, 'attrs', 'algn'])
-      if (!algn) algn = getTextByPathList(warpObj, ['slideMasterTables', 'typeTable', type, 'p:txBody', 'a:lstStyle', lvlStr, 'attrs', 'algn'])
-      if (!algn) algn = getTextByPathList(warpObj, ['slideMasterTextStyles', 'p:titleStyle', lvlStr, 'attrs', 'algn'])
+    const lvlIdx = getParagraphLevel(node)
+    const lvlStr = 'a:lvl' + lvlIdx + 'pPr'
+
+    algn = getAlignFromTextNode(slideLayoutSpNode, lvlStr)
+    if (!algn) algn = getAlignFromTextNode(slideMasterSpNode, lvlStr)
+
+    if (!algn && (type === 'title' || type === 'ctrTitle' || type === 'subTitle')) {
+      algn = getTextByPathList(warpObj, ['slideMasterTextStyles', 'p:titleStyle', lvlStr, 'attrs', 'algn'])
       if (!algn && type === 'subTitle') {
         algn = getTextByPathList(warpObj, ['slideMasterTextStyles', 'p:bodyStyle', lvlStr, 'attrs', 'algn'])
       }
     } 
-    else if (type === 'body') {
-      algn = getTextByPathList(warpObj, ['slideMasterTextStyles', 'p:bodyStyle', 'a:lvl1pPr', 'attrs', 'algn'])
+    else if (!algn && type === 'body') {
+      algn = getTextByPathList(warpObj, ['slideMasterTextStyles', 'p:bodyStyle', lvlStr, 'attrs', 'algn'])
     } 
-    else {
-      algn = getTextByPathList(warpObj, ['slideMasterTables', 'typeTable', type, 'p:txBody', 'a:lstStyle', 'a:lvl1pPr', 'attrs', 'algn'])
+    else if (!algn) {
+      algn = getTextByPathList(warpObj, ['slideMasterTextStyles', 'p:otherStyle', lvlStr, 'attrs', 'algn'])
     }
   }
 

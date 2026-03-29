@@ -2,43 +2,119 @@ import { getTextByPathList } from './utils'
 import { getShadow } from './shadow'
 import { getFillType, getGradientFill, getSolidFill } from './fill'
 
-export function getFontType(node, type, warpObj, slideLayoutSpNode, slideMasterSpNode, slideMasterTextStyles) {
-  const extractFont = (targetNode, isDirectRun = false) => {
-    if (!targetNode) return null
-    
-    let rPr
-    if (isDirectRun) rPr = getTextByPathList(targetNode, ['a:rPr']) 
-    else {
-      rPr = getTextByPathList(targetNode, ['p:txBody', 'a:lstStyle', 'a:lvl1pPr', 'a:defRPr'])
-      if (!rPr) rPr = getTextByPathList(targetNode, ['p:txBody', 'a:p', 'a:pPr', 'a:defRPr'])
-    }
+function pushStyleNode(styleNodes, styleNode) {
+  if (styleNode) styleNodes.push(styleNode)
+}
 
-    if (!rPr) return null
+function getLevelPath(lvl) {
+  return `a:lvl${lvl}pPr`
+}
 
-    return getTextByPathList(rPr, ['a:latin', 'attrs', 'typeface']) || getTextByPathList(rPr, ['a:ea', 'attrs', 'typeface'])
-  }
+function appendTextBodyStyleNodes(styleNodes, textBodyNode, lvl) {
+  if (!textBodyNode) return
 
-  let typeface = extractFont(node, true)
+  const lvlPath = getLevelPath(lvl)
+  pushStyleNode(styleNodes, getTextByPathList(textBodyNode, ['a:lstStyle', lvlPath, 'a:defRPr']))
+}
 
-  if (!typeface) typeface = extractFont(slideLayoutSpNode)
-  if (!typeface) typeface = extractFont(slideMasterSpNode)
+function appendShapeStyleNodes(styleNodes, shapeNode, lvl) {
+  if (!shapeNode) return
 
-  if (!typeface) {
-    let stylePath = []
-    if (type === 'title' || type === 'ctrTitle' || type === 'subTitle') {
-      stylePath = ['p:titleStyle', 'a:lvl1pPr', 'a:defRPr']
-    } 
-    else if (type === 'body') {
-      stylePath = ['p:bodyStyle', 'a:lvl1pPr', 'a:defRPr']
-    } 
-    else {
-      stylePath = ['p:otherStyle', 'a:lvl1pPr', 'a:defRPr']
-    }
-    const masterGlobalRPr = getTextByPathList(slideMasterTextStyles, stylePath)
-    if (masterGlobalRPr) {
-      typeface = getTextByPathList(masterGlobalRPr, ['a:latin', 'attrs', 'typeface']) || getTextByPathList(masterGlobalRPr, ['a:ea', 'attrs', 'typeface'])
+  const lvlPath = getLevelPath(lvl)
+  pushStyleNode(styleNodes, getTextByPathList(shapeNode, ['p:txBody', 'a:lstStyle', lvlPath, 'a:defRPr']))
+  pushStyleNode(styleNodes, getTextByPathList(shapeNode, ['p:txBody', 'a:p', 'a:pPr', 'a:defRPr']))
+}
+
+function appendMasterTextStyleNodes(styleNodes, type, lvl, slideMasterTextStyles) {
+  if (!slideMasterTextStyles) return
+
+  const lvlPath = getLevelPath(lvl)
+
+  if (type === 'title' || type === 'ctrTitle' || type === 'subTitle') {
+    pushStyleNode(styleNodes, getTextByPathList(slideMasterTextStyles, ['p:titleStyle', lvlPath, 'a:defRPr']))
+    if (type === 'subTitle') {
+      pushStyleNode(styleNodes, getTextByPathList(slideMasterTextStyles, ['p:bodyStyle', lvlPath, 'a:defRPr']))
     }
   }
+  else if (type === 'body') {
+    pushStyleNode(styleNodes, getTextByPathList(slideMasterTextStyles, ['p:bodyStyle', lvlPath, 'a:defRPr']))
+  }
+  else {
+    pushStyleNode(styleNodes, getTextByPathList(slideMasterTextStyles, ['p:otherStyle', lvlPath, 'a:defRPr']))
+  }
+}
+
+function getFontStyleNodes(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl) {
+  const styleNodes = []
+
+  pushStyleNode(styleNodes, getTextByPathList(node, ['a:rPr']))
+  pushStyleNode(styleNodes, getTextByPathList(pNode, ['a:endParaRPr']))
+  pushStyleNode(styleNodes, getTextByPathList(pNode, ['a:pPr', 'a:defRPr']))
+
+  appendTextBodyStyleNodes(styleNodes, textBodyNode, lvl)
+  appendShapeStyleNodes(styleNodes, slideLayoutSpNode, lvl)
+  appendShapeStyleNodes(styleNodes, slideMasterSpNode, lvl)
+  appendMasterTextStyleNodes(styleNodes, type, lvl, slideMasterTextStyles)
+
+  return styleNodes
+}
+
+function getFontAttr(styleNodes, attrName) {
+  for (const styleNode of styleNodes) {
+    const attrValue = getTextByPathList(styleNode, ['attrs', attrName])
+    if (attrValue !== undefined && attrValue !== '') return attrValue
+  }
+
+  return ''
+}
+
+function getFontTypeface(styleNodes) {
+  for (const styleNode of styleNodes) {
+    const typeface = getTextByPathList(styleNode, ['a:latin', 'attrs', 'typeface']) || getTextByPathList(styleNode, ['a:ea', 'attrs', 'typeface'])
+    if (typeface) return typeface
+  }
+
+  return ''
+}
+
+function getColorFromNode(node, warpObj) {
+  if (!node) return ''
+
+  const fillType = getFillType(node)
+  if (fillType === 'SOLID_FILL') {
+    return getSolidFill(node['a:solidFill'], undefined, undefined, warpObj)
+  }
+  if (fillType === 'GRADIENT_FILL') {
+    return getGradientFill(node['a:gradFill'], warpObj)
+  }
+
+  return ''
+}
+
+function getFontColorFromStyleNodes(styleNodes, warpObj) {
+  for (const styleNode of styleNodes) {
+    const color = getColorFromNode(styleNode, warpObj)
+    if (color) return color
+  }
+
+  return ''
+}
+
+function getTextShadowFromStyleNodes(styleNodes, warpObj) {
+  for (const styleNode of styleNodes) {
+    const txtShadow = getTextByPathList(styleNode, ['a:effectLst', 'a:outerShdw'])
+    if (!txtShadow) continue
+
+    const shadow = getShadow(txtShadow, warpObj)
+    if (shadow) return shadow
+  }
+
+  return null
+}
+
+export function getFontType(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl, warpObj) {
+  const styleNodes = getFontStyleNodes(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl)
+  let typeface = getFontTypeface(styleNodes)
 
   if (!typeface || typeface.startsWith('+')) {
     const fontSchemeNode = getTextByPathList(warpObj['themeContent'], ['a:theme', 'a:themeElements', 'a:fontScheme'])
@@ -71,100 +147,33 @@ export function getFontType(node, type, warpObj, slideLayoutSpNode, slideMasterS
   return typeface || ''
 }
 
-export function getFontColor(node, pNode, lstStyle, pFontStyle, lvl, warpObj) {
-  const rPrNode = getTextByPathList(node, ['a:rPr'])
-  let filTyp, color
-  if (rPrNode) {
-    filTyp = getFillType(rPrNode)
-    if (filTyp === 'SOLID_FILL') {
-      const solidFillNode = rPrNode['a:solidFill']
-      color = getSolidFill(solidFillNode, undefined, undefined, warpObj)
-    }
-    if (filTyp === 'GRADIENT_FILL') {
-      const gradientFillNode = rPrNode['a:gradFill']
-      const gradient = getGradientFill(gradientFillNode, warpObj)
-      return gradient
-    }
-  }
-  if (!color && getTextByPathList(lstStyle, ['a:lvl' + lvl + 'pPr', 'a:defRPr'])) {
-    const lstStyledefRPr = getTextByPathList(lstStyle, ['a:lvl' + lvl + 'pPr', 'a:defRPr'])
-    filTyp = getFillType(lstStyledefRPr)
-    if (filTyp === 'SOLID_FILL') {
-      const solidFillNode = lstStyledefRPr['a:solidFill']
-      color = getSolidFill(solidFillNode, undefined, undefined, warpObj)
-    }
-  }
+export function getFontColor(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl, pFontStyle, warpObj) {
+  const styleNodes = getFontStyleNodes(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl)
+  let color = getFontColorFromStyleNodes(styleNodes, warpObj)
+
   if (!color) {
-    const sPstyle = getTextByPathList(pNode, ['p:style', 'a:fontRef'])
-    if (sPstyle) color = getSolidFill(sPstyle, undefined, undefined, warpObj)
-    if (!color && pFontStyle) color = getSolidFill(pFontStyle, undefined, undefined, warpObj)
+    if (pFontStyle) color = getSolidFill(pFontStyle, undefined, undefined, warpObj)
+    if (!color) {
+      const layoutFontStyle = getTextByPathList(slideLayoutSpNode, ['p:style', 'a:fontRef'])
+      if (layoutFontStyle) color = getSolidFill(layoutFontStyle, undefined, undefined, warpObj)
+    }
+    if (!color) {
+      const masterFontStyle = getTextByPathList(slideMasterSpNode, ['p:style', 'a:fontRef'])
+      if (masterFontStyle) color = getSolidFill(masterFontStyle, undefined, undefined, warpObj)
+    }
   }
+
   return color || ''
 }
 
-export function getFontSize(node, slideLayoutSpNode, type, slideMasterTextStyles, textBodyNode, pNode) {
-  let fontSize
+export function getFontSize(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl) {
+  const styleNodes = getFontStyleNodes(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl)
+  const sz = getFontAttr(styleNodes, 'sz')
+  let fontSize = sz ? parseInt(sz) / 100 : undefined
 
-  if (getTextByPathList(node, ['a:rPr', 'attrs', 'sz'])) fontSize = getTextByPathList(node, ['a:rPr', 'attrs', 'sz']) / 100
+  if ((isNaN(fontSize) || !fontSize) && (type === 'dt' || type === 'sldNum')) fontSize = 12
 
-  if ((isNaN(fontSize) || !fontSize) && pNode) {
-    if (getTextByPathList(pNode, ['a:endParaRPr', 'attrs', 'sz'])) {
-      fontSize = getTextByPathList(pNode, ['a:endParaRPr', 'attrs', 'sz']) / 100
-    }
-  }
-
-  if ((isNaN(fontSize) || !fontSize) && textBodyNode) {
-    const lstStyle = getTextByPathList(textBodyNode, ['a:lstStyle'])
-    if (lstStyle) {
-      let lvl = 1
-      if (pNode) {
-        const lvlNode = getTextByPathList(pNode, ['a:pPr', 'attrs', 'lvl'])
-        if (lvlNode !== undefined) lvl = parseInt(lvlNode) + 1
-      }
-
-      const sz = getTextByPathList(lstStyle, [`a:lvl${lvl}pPr`, 'a:defRPr', 'attrs', 'sz'])
-      if (sz) fontSize = parseInt(sz) / 100
-    }
-  }
-
-  if ((isNaN(fontSize) || !fontSize)) {
-    const sz = getTextByPathList(slideLayoutSpNode, ['p:txBody', 'a:lstStyle', 'a:lvl1pPr', 'a:defRPr', 'attrs', 'sz'])
-    if (sz) fontSize = parseInt(sz) / 100
-  }
-
-  if ((isNaN(fontSize) || !fontSize) && slideLayoutSpNode) {
-    let lvl = 1
-    if (pNode) {
-      const lvlNode = getTextByPathList(pNode, ['a:pPr', 'attrs', 'lvl'])
-      if (lvlNode !== undefined) lvl = parseInt(lvlNode) + 1
-    }
-    const layoutSz = getTextByPathList(slideLayoutSpNode, ['p:txBody', 'a:lstStyle', `a:lvl${lvl}pPr`, 'a:defRPr', 'attrs', 'sz'])
-    if (layoutSz) fontSize = parseInt(layoutSz) / 100
-  }
-
-  if ((isNaN(fontSize) || !fontSize) && pNode) {
-    const paraSz = getTextByPathList(pNode, ['a:pPr', 'a:defRPr', 'attrs', 'sz'])
-    if (paraSz) fontSize = parseInt(paraSz) / 100
-  }
-
-  if (isNaN(fontSize) || !fontSize) {
-    let sz
-    if (type === 'title' || type === 'subTitle' || type === 'ctrTitle') {
-      sz = getTextByPathList(slideMasterTextStyles, ['p:titleStyle', 'a:lvl1pPr', 'a:defRPr', 'attrs', 'sz'])
-    } 
-    else if (type === 'body') {
-      sz = getTextByPathList(slideMasterTextStyles, ['p:bodyStyle', 'a:lvl1pPr', 'a:defRPr', 'attrs', 'sz'])
-    } 
-    else if (type === 'dt' || type === 'sldNum') {
-      sz = '1200'
-    } 
-    else if (!type) {
-      sz = getTextByPathList(slideMasterTextStyles, ['p:otherStyle', 'a:lvl1pPr', 'a:defRPr', 'attrs', 'sz'])
-    }
-    if (sz) fontSize = parseInt(sz) / 100
-  }
-
-  const baseline = getTextByPathList(node, ['a:rPr', 'attrs', 'baseline'])
+  const baseline = getFontAttr(styleNodes, 'baseline')
   if (baseline && !isNaN(fontSize)) fontSize -= 10
 
   fontSize = (isNaN(fontSize) || !fontSize) ? 18 : fontSize
@@ -172,42 +181,46 @@ export function getFontSize(node, slideLayoutSpNode, type, slideMasterTextStyles
   return fontSize + 'pt'
 }
 
-export function getFontBold(node) {
-  return getTextByPathList(node, ['a:rPr', 'attrs', 'b']) === '1' ? 'bold' : ''
+export function getFontBold(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl) {
+  const styleNodes = getFontStyleNodes(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl)
+  return getFontAttr(styleNodes, 'b') === '1' ? 'bold' : ''
 }
 
-export function getFontItalic(node) {
-  return getTextByPathList(node, ['a:rPr', 'attrs', 'i']) === '1' ? 'italic' : ''
+export function getFontItalic(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl) {
+  const styleNodes = getFontStyleNodes(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl)
+  return getFontAttr(styleNodes, 'i') === '1' ? 'italic' : ''
 }
 
-export function getFontDecoration(node) {
-  return getTextByPathList(node, ['a:rPr', 'attrs', 'u']) === 'sng' ? 'underline' : ''
+export function getFontDecoration(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl) {
+  const styleNodes = getFontStyleNodes(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl)
+  return getFontAttr(styleNodes, 'u') === 'sng' ? 'underline' : ''
 }
 
-export function getFontDecorationLine(node) {
-  return getTextByPathList(node, ['a:rPr', 'attrs', 'strike']) === 'sngStrike' ? 'line-through' : ''
+export function getFontDecorationLine(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl) {
+  const styleNodes = getFontStyleNodes(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl)
+  return getFontAttr(styleNodes, 'strike') === 'sngStrike' ? 'line-through' : ''
 }
 
-export function getFontSpace(node) {
-  const spc = getTextByPathList(node, ['a:rPr', 'attrs', 'spc'])
-  return spc ? (parseInt(spc) / 100 + 'pt') : ''
+export function getFontSpace(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl) {
+  const styleNodes = getFontStyleNodes(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl)
+  const spc = getFontAttr(styleNodes, 'spc')
+  return (spc && parseInt(spc) !== 0) ? (parseInt(spc) / 100 + 'pt') : ''
 }
 
-export function getFontSubscript(node) {
-  const baseline = getTextByPathList(node, ['a:rPr', 'attrs', 'baseline'])
+export function getFontSubscript(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl) {
+  const styleNodes = getFontStyleNodes(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl)
+  const baseline = getFontAttr(styleNodes, 'baseline')
   if (!baseline) return ''
   return parseInt(baseline) > 0 ? 'super' : 'sub'
 }
 
-export function getFontShadow(node, warpObj) {
-  const txtShadow = getTextByPathList(node, ['a:rPr', 'a:effectLst', 'a:outerShdw'])
-  if (txtShadow) {
-    const shadow = getShadow(txtShadow, warpObj)
-    if (shadow) {
-      const { h, v, blur, color } = shadow
-      if (!isNaN(v) && !isNaN(h)) {
-        return h + 'pt ' + v + 'pt ' + (blur ? blur + 'pt' : '') + ' ' + color
-      }
+export function getFontShadow(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl, warpObj) {
+  const styleNodes = getFontStyleNodes(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl)
+  const shadow = getTextShadowFromStyleNodes(styleNodes, warpObj)
+  if (shadow) {
+    const { h, v, blur, color } = shadow
+    if (!isNaN(v) && !isNaN(h)) {
+      return h + 'pt ' + v + 'pt ' + (blur ? blur + 'pt' : '') + ' ' + color
     }
   }
   return ''

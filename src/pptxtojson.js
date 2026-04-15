@@ -5,7 +5,7 @@ import { getSlideBackgroundFill, getShapeFill, getSolidFill, getPicFill, getPicF
 import { getChartInfo } from './chart'
 import { getVerticalAlign, getTextAutoFit } from './align'
 import { getPosition, getSize } from './position'
-import { genTextBody } from './text'
+import { genTextBody, getTextNodeValue } from './text'
 import { getCustomShapePath, identifyShape } from './shape'
 import { extractFileExtension, getTextByPathList, angleToDegrees, isVideoLink, escapeHtml, hasValidText, numberToFixed } from './utils'
 import { getShadow } from './shadow'
@@ -392,7 +392,7 @@ function getNote(noteContent) {
       if (rNodes) {
         if (rNodes.constructor !== Array) rNodes = [rNodes]
         for (const r of rNodes) {
-          const t = getTextByPathList(r, ['a:t'])
+          const t = getTextNodeValue(getTextByPathList(r, ['a:t']))
           if (t && typeof t === 'string') text += t
         }
       }

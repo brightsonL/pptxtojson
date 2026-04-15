@@ -2,6 +2,10 @@ import * as txml from 'txml/dist/txml.mjs'
 
 let cust_attr_order = 0
 
+function isWhitespaceTextNode(node) {
+  return typeof node === 'string' && node.trim() === ''
+}
+
 export function simplifyLostLess(children, parentAttributes = {}) {
   const out = {}
   if (!children.length) return out
@@ -13,6 +17,7 @@ export function simplifyLostLess(children, parentAttributes = {}) {
     } : children[0]
   }
   for (const child of children) {
+    if (isWhitespaceTextNode(child)) continue
     if (typeof child !== 'object') return
     if (child.tagName === '?xml') continue
 
@@ -39,7 +44,7 @@ export function simplifyLostLess(children, parentAttributes = {}) {
 export async function readXmlFile(zip, filename) {
   try {
     const data = await zip.file(filename).async('string')
-    return simplifyLostLess(txml.parse(data))
+    return simplifyLostLess(txml.parse(data, { keepWhitespace: true }))
   }
   catch {
     return null

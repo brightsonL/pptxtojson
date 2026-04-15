@@ -1,4 +1,5 @@
 import { readXmlFile } from './readXmlFile'
+import { getTextNodeValue } from './text'
 import { getTextByPathList } from './utils'
 
 export async function loadDiagramFile(warpObj, filename, transformDrawing = false) {
@@ -112,7 +113,7 @@ export function getSmartArtTextData(dataContent) {
             if (!Array.isArray(runs)) runs = [runs]
 
             runs.forEach(r => {
-              const t = getTextByPathList(r, ['a:t'])
+              const t = getTextNodeValue(getTextByPathList(r, ['a:t']))
               if (t && typeof t === 'string') nodeText += t
             })
           }

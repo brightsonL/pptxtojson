@@ -14,6 +14,12 @@ import {
   getFontShadow,
 } from './fontStyle'
 
+export function getTextNodeValue(node) {
+  if (typeof node === 'string') return node
+  if (node && typeof node.value === 'string') return node.value
+  return undefined
+}
+
 export function genTextBody(textBodyNode, spNode, slideLayoutSpNode, slideMasterSpNode, type, warpObj) {
   if (!textBodyNode) return ''
 
@@ -170,8 +176,8 @@ export function getSpanStyleInfo(node, pNode, textBodyNode, pFontStyle, slideLay
   const lvlNode = getTextByPathList(pPrNode, ['attrs', 'lvl'])
   if (lvlNode !== undefined) lvl = parseInt(lvlNode) + 1
 
-  let text = node['a:t']
-  if (typeof text !== 'string') text = getTextByPathList(node, ['a:fld', 'a:t'])
+  let text = getTextNodeValue(node['a:t'])
+  if (typeof text !== 'string') text = getTextNodeValue(getTextByPathList(node, ['a:fld', 'a:t']))
   if (typeof text !== 'string') text = '&nbsp;'
 
   let styleText = ''

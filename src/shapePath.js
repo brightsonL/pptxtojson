@@ -4,27 +4,33 @@ import { RATIO_EMUs_Points } from './constants'
 import { getTextByPathList } from './utils'
 
 function shapePie(H, w, adj1, adj2, isClose) {
-  const pieVal = parseInt(adj2)
-  const piAngle = parseInt(adj1)
+  const pieVal = parseFloat(adj2)
+  const piAngle = parseFloat(adj1)
   const size = parseInt(H)
   const radiusY = size / 2
   const radiusX = w / 2
+  const centerX = radiusX
+  const centerY = radiusY
 
   let value = pieVal - piAngle
   if (value < 0) value = 360 + value
   value = Math.min(Math.max(value, 0), 360)
 
-  const x = Math.cos((2 * Math.PI) / (360 / value))
-  const y = Math.sin((2 * Math.PI) / (360 / value))
+  const startRadians = piAngle * Math.PI / 180
+  const endRadians = (piAngle + value) * Math.PI / 180
+  const startX = centerX + Math.cos(startRadians) * radiusX
+  const startY = centerY + Math.sin(startRadians) * radiusY
+  const endX = centerX + Math.cos(endRadians) * radiusX
+  const endY = centerY + Math.sin(endRadians) * radiusY
 
   let longArc, d
   if (isClose) {
     longArc = (value <= 180) ? 0 : 1
-    d = `M${radiusX},${radiusY} L${radiusX},0 A${radiusX},${radiusY} 0 ${longArc},1 ${radiusX + y * radiusX},${radiusY - x * radiusY} z`
+    d = `M${centerX},${centerY} L${startX},${startY} A${radiusX},${radiusY} 0 ${longArc},1 ${endX},${endY} z`
   } 
   else {
     longArc = (value <= 180) ? 0 : 1
-    d = `M${radiusX},0 A${radiusX},${radiusY} 0 ${longArc},1 ${radiusX + y * radiusX},${radiusY - x * radiusY}`
+    d = `M${startX},${startY} A${radiusX},${radiusY} 0 ${longArc},1 ${endX},${endY}`
   }
 
   return d
@@ -1433,17 +1439,18 @@ export function getShapePath(shapType, w, h, node) {
         }
 
         if (shapAdjst) {
-          let shapAdjst1 = getTextByPathList(shapAdjst, ['attrs', 'fmla'])
-          let shapAdjst2 = shapAdjst1
-          if (shapAdjst1 === undefined) {
-            shapAdjst1 = shapAdjst[0]['attrs']['fmla']
-            shapAdjst2 = shapAdjst[1]['attrs']['fmla']
-          }
-          if (shapAdjst1) {
-            adj1 = parseInt(shapAdjst1.substring(4)) / 60000
-          }
-          if (shapAdjst2) {
-            adj2 = parseInt(shapAdjst2.substring(4)) / 60000
+          const shapAdjstAry = Array.isArray(shapAdjst) ? shapAdjst : [shapAdjst]
+          for (const adj of shapAdjstAry) {
+            const name = getTextByPathList(adj, ['attrs', 'name'])
+            const fmla = getTextByPathList(adj, ['attrs', 'fmla'])
+            if (!name || !fmla) continue
+
+            if (name === 'adj1') {
+              adj1 = parseInt(fmla.substring(4)) / 60000
+            }
+            else if (name === 'adj2') {
+              adj2 = parseInt(fmla.substring(4)) / 60000
+            }
           }
         }
 

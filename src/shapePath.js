@@ -7,7 +7,8 @@ function shapePie(H, w, adj1, adj2, isClose) {
   const pieVal = parseInt(adj2)
   const piAngle = parseInt(adj1)
   const size = parseInt(H)
-  const radius = size / 2
+  const radiusY = size / 2
+  const radiusX = w / 2
 
   let value = pieVal - piAngle
   if (value < 0) value = 360 + value
@@ -19,13 +20,11 @@ function shapePie(H, w, adj1, adj2, isClose) {
   let longArc, d
   if (isClose) {
     longArc = (value <= 180) ? 0 : 1
-    d = `M${radius},${radius} L${radius},0 A${radius},${radius} 0 ${longArc},1 ${radius + y * radius},${radius - x * radius} z`
+    d = `M${radiusX},${radiusY} L${radiusX},0 A${radiusX},${radiusY} 0 ${longArc},1 ${radiusX + y * radiusX},${radiusY - x * radiusY} z`
   } 
   else {
     longArc = (value <= 180) ? 0 : 1
-    const radius1 = radius
-    const radius2 = w / 2
-    d = `M${radius1},0 A${radius2},${radius1} 0 ${longArc},1 ${radius2 + y * radius2},${radius1 - x * radius1}`
+    d = `M${radiusX},0 A${radiusX},${radiusY} 0 ${longArc},1 ${radiusX + y * radiusX},${radiusY - x * radiusY}`
   }
 
   return d

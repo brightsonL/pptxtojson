@@ -33,6 +33,7 @@ export async function parse(file, options = {}) {
   const filesInfo = await getContentTypes(zip)
   const { width, height, defaultTextStyle } = await getSlideInfo(zip)
   const { themeContent, themeColors } = await getTheme(zip)
+  const usedFonts = await getUsedFonts(zip)
 
   for (const filename of filesInfo.slides) {
     const singleSlide = await processSingleSlide(zip, filename, themeContent, defaultTextStyle, loadedImages, loadedVideos, loadedAudios, parseOptions)
@@ -41,6 +42,7 @@ export async function parse(file, options = {}) {
 
   return {
     slides,
+    usedFonts,
     themeColors,
     size: {
       width,
@@ -79,6 +81,22 @@ async function getContentTypes(zip) {
     slides: slidesLocArray,
     slideLayouts: slideLayoutsLocArray,
   }
+}
+
+async function getUsedFonts(zip) {
+  const content = await readXmlFile(zip, 'ppt/presentation.xml')
+  const embeddedFontList = getTextByPathList(content, ['p:presentation', 'p:embeddedFontLst', 'p:embeddedFont'])
+  const usedFonts = []
+
+  if (!embeddedFontList) return usedFonts
+
+  const embeddedFonts = embeddedFontList.constructor === Array ? embeddedFontList : [embeddedFontList]
+  for (const embeddedFont of embeddedFonts) {
+    const typeface = getTextByPathList(embeddedFont, ['p:font', 'attrs', 'typeface'])
+    if (typeface && !usedFonts.includes(typeface)) usedFonts.push(typeface)
+  }
+
+  return usedFonts
 }
 
 async function getSlideInfo(zip) {

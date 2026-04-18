@@ -160,6 +160,8 @@ func()
 
 - 幻灯片主题色 `themeColors`
 
+- 内置字体清单 `usedFonts`
+
 - 幻灯片尺寸 `size`
 	- 宽度 `width`
 	- 高度 `height`

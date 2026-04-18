@@ -316,6 +316,7 @@ export interface Options {
 export const parse: (file: ArrayBuffer, options?: Options) => Promise<{
   slides: Slide[]
   themeColors: string[]
+  usedFonts: string[]
   size: {
     width: number
     height: number

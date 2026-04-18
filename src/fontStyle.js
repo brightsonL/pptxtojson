@@ -44,6 +44,14 @@ function appendMasterTextStyleNodes(styleNodes, type, lvl, slideMasterTextStyles
   }
 }
 
+function appendDefaultTextStyleNodes(styleNodes, lvl, defaultTextStyle) {
+  if (!defaultTextStyle) return
+
+  const lvlPath = getLevelPath(lvl)
+  pushStyleNode(styleNodes, getTextByPathList(defaultTextStyle, [lvlPath, 'a:defRPr']))
+  pushStyleNode(styleNodes, getTextByPathList(defaultTextStyle, ['a:defPPr', 'a:defRPr']))
+}
+
 function getBaseFontStyleNodes(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, lvl) {
   const styleNodes = []
   const runStyleNode = getTextByPathList(node, ['a:rPr'])
@@ -180,8 +188,9 @@ export function getFontColor(node, pNode, textBodyNode, slideLayoutSpNode, slide
   return color || ''
 }
 
-export function getFontSize(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl) {
+export function getFontSize(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl, defaultTextStyle) {
   const styleNodes = getFontStyleNodes(node, pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, lvl)
+  appendDefaultTextStyleNodes(styleNodes, lvl, defaultTextStyle)
   const sz = getFontAttr(styleNodes, 'sz')
   let fontSize = sz ? parseInt(sz) / 100 : undefined
 

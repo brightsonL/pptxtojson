@@ -700,6 +700,7 @@ async function processSpNode(node, warpObj, source, groupHierarchy = []) {
   }
   if (!type) type = getTextByPathList(slideLayoutSpNode, ['p:nvSpPr', 'p:nvPr', 'p:ph', 'attrs', 'type'])
   if (!type) type = getTextByPathList(slideMasterSpNode, ['p:nvSpPr', 'p:nvPr', 'p:ph', 'attrs', 'type'])
+  if (!slideMasterSpNode && type === 'ctrTitle') slideMasterSpNode = warpObj['slideMasterTables']['typeTable']['title']
 
   if (!type) {
     if (source === 'diagramBg') type = 'diagram'

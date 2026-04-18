@@ -1,4 +1,4 @@
-import { getHorizontalAlign, getParagraphSpacing } from './align'
+import { getHorizontalAlign, getParagraphSpacing } from './paragraph'
 import { getTextByPathList } from './utils'
 
 import {
@@ -58,7 +58,7 @@ export function genTextBody(textBodyNode, spNode, slideLayoutSpNode, slideMaster
     }
 
     const align = getHorizontalAlign(pNode, spNode, type, slideLayoutSpNode, slideMasterSpNode, warpObj)
-    const spacing = getParagraphSpacing(pNode)
+    const spacing = getParagraphSpacing(pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, warpObj)
 
     let styleText = `text-align: ${align};`
     if (spacing) {

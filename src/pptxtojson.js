@@ -642,6 +642,8 @@ async function processGroupSpNode(node, warpObj, source, parentGroupHierarchy = 
     return elements.map(element => {
       const processed = {
         ...element,
+        left: numberToFixed(element.left * ws),
+        top: numberToFixed(element.top * hs),
         width: numberToFixed(element.width * ws),
         height: numberToFixed(element.height * hs),
       }

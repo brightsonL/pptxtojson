@@ -54,6 +54,7 @@ export async function getTableCellParams(tcNode, thisTblStyle, cellSource, warpO
   const colSpan = getTextByPathList(tcNode, ['attrs', 'gridSpan'])
   const vMerge = getTextByPathList(tcNode, ['attrs', 'vMerge'])
   const hMerge = getTextByPathList(tcNode, ['attrs', 'hMerge'])
+  const anchor = getTextByPathList(tcNode, ['a:tcPr', 'attrs', 'anchor'])
   let fillColor
   let fontColor
   let fontBold
@@ -114,6 +115,7 @@ export async function getTableCellParams(tcNode, thisTblStyle, cellSource, warpO
     fontColor,
     fontBold,
     borders,
+    vAlign: (anchor === 'ctr') ? 'mid' : ((anchor === 'b') ? 'down' : 'up'),
     rowSpan: rowSpan ? +rowSpan : undefined,
     colSpan: colSpan ? +colSpan : undefined,
     vMerge: vMerge ? +vMerge : undefined,

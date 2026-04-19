@@ -258,7 +258,7 @@ func()
 			- 宽度 `width`
 			- 高度 `height`
 			- 边框（4边） `borders`
-			- 表格数据 `data`
+			- 单元格样式与数据 `data`
 			- 行高 `rowHeights`
 			- 列宽 `colWidths`
 

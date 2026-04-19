@@ -147,6 +147,7 @@ export interface TableCell {
   fillColor?: string
   fontColor?: string
   fontBold?: boolean
+  vAlign: string
   borders: {
     top?: Border
     bottom?: Border

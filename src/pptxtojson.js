@@ -1189,6 +1189,7 @@ async function genTable(node, warpObj) {
         if (cell.colSpan) td.colSpan = cell.colSpan
         if (cell.vMerge) td.vMerge = cell.vMerge
         if (cell.hMerge) td.hMerge = cell.hMerge
+        if (cell.vAlign) td.vAlign = cell.vAlign
         if (cell.fontBold || fontBold) td.fontBold = cell.fontBold || fontBold
         if (cell.fontColor || fontColor) td.fontColor = cell.fontColor || fontColor
         if (cell.fillColor || fillColor || tbl_bgcolor) td.fillColor = cell.fillColor || fillColor || tbl_bgcolor
@@ -1221,6 +1222,7 @@ async function genTable(node, warpObj) {
       if (cell.colSpan) td.colSpan = cell.colSpan
       if (cell.vMerge) td.vMerge = cell.vMerge
       if (cell.hMerge) td.hMerge = cell.hMerge
+      if (cell.vAlign) td.vAlign = cell.vAlign
       if (cell.fontBold || fontBold) td.fontBold = cell.fontBold || fontBold
       if (cell.fontColor || fontColor) td.fontColor = cell.fontColor || fontColor
       if (cell.fillColor || fillColor || tbl_bgcolor) td.fillColor = cell.fillColor || fillColor || tbl_bgcolor

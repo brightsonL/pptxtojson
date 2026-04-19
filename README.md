@@ -1,13 +1,11 @@
 # 🎨 pptxtojson
 
-<p>
-    <a href="https://www.github.com/pipipi-pikachu/pptxtojson/stargazers" target="_black"><img src="https://img.shields.io/github/stars/pipipi-pikachu/pptxtojson?logo=github" alt="stars" /></a>
-    <a href="https://www.github.com/pipipi-pikachu/pptxtojson/network/members" target="_black"><img src="https://img.shields.io/github/forks/pipipi-pikachu/pptxtojson?logo=github" alt="forks" /></a>
-    <a href="https://www.github.com/pipipi-pikachu/pptxtojson/blob/master/LICENSE" target="_black"><img src="https://img.shields.io/github/license/pipipi-pikachu/pptxtojson?logo=github" alt="license" /></a>
-    <a href="https://github.com/pipipi-pikachu/pptxtojson/issues" target="_black"><img src="https://img.shields.io/github/issues-closed/pipipi-pikachu/pptxtojson?logo=github" alt="issue"></a>
-    <a href="https://gitee.com/pptist/pptxtojson" target="_black"><img src="https://gitee.com/pptist/pptxtojson/badge/star.svg?version=latest" alt="gitee"></a>
-    <a href="https://gitcode.com/pipipi-pikachu/pptxtojson" target="_black"><img src="https://gitcode.com/pipipi-pikachu/pptxtojson/star/badge.svg" alt="gitcode"></a>
-</p>
+[![npm-version](https://img.shields.io/npm/v/pptxtojson)](https://www.npmjs.com/package/pptxtojson)
+[![npm download](https://img.shields.io/npm/dm/pptxtojson)](https://www.npmjs.com/package/pptxtojson)
+[![GitHub issues](https://img.shields.io/github/issues-closed/pipipi-pikachu/pptxtojson)](https://github.com/pipipi-pikachu/pptxtojson/issues)
+[![license](https://img.shields.io/github/license/pipipi-pikachu/pptxtojson)](https://www.github.com/pipipi-pikachu/pptxtojson/blob/master/LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/pipipi-pikachu/pptxtojson)](https://www.github.com/pipipi-pikachu/pptxtojson/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/pipipi-pikachu/pptxtojson)](https://www.github.com/pipipi-pikachu/pptxtojson/network/members)
 
 一个运行在浏览器中，可以将 .pptx 文件转为可读的 JSON 数据的 JavaScript 库。
 
@@ -324,12 +322,12 @@ func()
 			- 高度 `height`
 			- 子元素集合 `elements`
 
-### 更多类型请参考 👇
+### 更详细类型请参考 👇
 [https://github.com/pipipi-pikachu/pptxtojson/blob/master/dist/index.d.ts](https://github.com/pipipi-pikachu/pptxtojson/blob/master/dist/index.d.ts)
 
 # 🙏 感谢
 本仓库大量参考了 [PPTX2HTML](https://github.com/g21589/PPTX2HTML) 和 [PPTXjs](https://github.com/meshesha/PPTXjs) 的实现。
-> 与它们不同的是：PPTX2HTML 和 PPTXjs 是将PPT文件转换为能够运行的 HTML 页面，而 pptxtojson 做的是将PPT文件转换为干净的 JSON 数据，且在原有基础上进行了大量优化补充（包括代码质量和提取信息的完整度和准确度）。
+> 与它们不同的是：pptxtojson 不是将PPT文件转换为 HTML 页面，而是转换为干净、易读的 JSON 数据，且在原有基础上进行了大量优化补充，大幅提升了提取信息的完整度和准确度。
 
 # 📄 开源协议
 MIT License | Copyright © 2020-PRESENT [pipipi-pikachu](https://github.com/pipipi-pikachu)

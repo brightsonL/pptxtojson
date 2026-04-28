@@ -3,8 +3,7 @@ import { RATIO_EMUs_Points } from './constants'
 
 /**
  * @description 默认内边距（EMU）
- * ref: https://ooxml.info/docs/21/21.1/21.1.2/21.1.2.1/21.1.2.1.1/#tins-top-inset
- * ref: https://ooxml.info/docs/21/21.1/21.1.2/21.1.2.1/21.1.2.1.1/#lins-left-inset
+ * ref: https://ooxml.info/docs/21/21.1/21.1.2/21.1.2.1/21.1.2.1.1/
  */
 const DEFAULT_INSET_EMU = {
   lIns: 91440, // 0.1 in

@@ -15,7 +15,7 @@ const DEFAULT_INSET_EMU = {
 
 /**
  * @description 按“当前节点 -> 布局占位符 -> 母版占位符”顺序获取某一侧 inset 原始值（EMU 字符串）
- * 继承关系参考 ref: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-oe376/8b5c01b6-a623-4952-a8ab-e6a5177e47ec
+ * ref: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-oe376/8b5c01b6-a623-4952-a8ab-e6a5177e47ec
  */
 function pickInsetAttr(slideNode, layoutNode, masterNode, attrName) {
   let v = getTextByPathList(slideNode, ['p:txBody', 'a:bodyPr', 'attrs', attrName])

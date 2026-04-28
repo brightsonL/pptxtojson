@@ -4,6 +4,7 @@ import { getBorder } from './border'
 import { getSlideBackgroundFill, getShapeFill, getSolidFill, getPicFill, getPicFilters, getImageData, getVideoData, getAudioData } from './fill'
 import { getChartInfo } from './chart'
 import { getVerticalAlign, getTextAutoFit } from './paragraph'
+import { getTextInsets } from './textInsets'
 import { getPosition, getSize } from './position'
 import { genTextBody, getTextNodeValue } from './text'
 import { getCustomShapePath, identifyShape } from './shape'
@@ -775,6 +776,7 @@ async function genShape(node, slideLayoutSpNode, slideMasterSpNode, name, type, 
   const vAlign = getVerticalAlign(node, slideLayoutSpNode, slideMasterSpNode, type)
   const isVertical = getTextByPathList(node, ['p:txBody', 'a:bodyPr', 'attrs', 'vert']) === 'eaVert'
   const autoFit = getTextAutoFit(node, slideLayoutSpNode, slideMasterSpNode)
+  const textInset = getTextInsets(node, slideLayoutSpNode, slideMasterSpNode)
 
   const data = {
     left,
@@ -798,6 +800,7 @@ async function genShape(node, slideLayoutSpNode, slideMasterSpNode, name, type, 
   if (shadow) data.shadow = shadow
   if (autoFit) data.autoFit = autoFit
   if (link) data.link = link
+  if (textInset) data.textInset = textInset
 
   const isHasValidText = data.content && hasValidText(data.content)
 

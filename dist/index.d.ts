@@ -54,6 +54,13 @@ export interface AutoFit {
   fontScale?: number
 }
 
+export interface TextInset {
+  l: number
+  t: number
+  r: number
+  b: number
+}
+
 export interface Shape {
   type: 'shape'
   left: number
@@ -77,6 +84,7 @@ export interface Shape {
   name: string
   order: number
   autoFit?: AutoFit
+  textInset?: TextInset
   link?: string
 }
 
@@ -101,6 +109,7 @@ export interface Text {
   name: string
   order: number
   autoFit?: AutoFit
+  textInset?: TextInset
   link?: string
 }
 

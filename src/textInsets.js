@@ -1,10 +1,6 @@
 import { getTextByPathList, numberToFixed } from './utils'
 import { RATIO_EMUs_Points } from './constants'
 
-/**
- * @description 默认内边距（EMU）
- * ref: https://ooxml.info/docs/21/21.1/21.1.2/21.1.2.1/21.1.2.1.1/
- */
 const DEFAULT_INSET_EMU = {
   lIns: 91440, // 0.1 in
   rIns: 91440, // 0.1 in
@@ -12,26 +8,16 @@ const DEFAULT_INSET_EMU = {
   bIns: 45720, // 0.05 in
 }
 
-/**
- * @description 按“当前节点 -> 布局占位符 -> 母版占位符”顺序获取某一侧 inset 原始值（EMU 字符串）
- * ref: https://learn.microsoft.com/en-us/openspecs/office_standards/ms-oe376/8b5c01b6-a623-4952-a8ab-e6a5177e47ec
- */
-function pickInsetAttr(slideNode, layoutNode, masterNode, attrName) {
+function getInsetAttr(slideNode, layoutNode, masterNode, attrName) {
   let v = getTextByPathList(slideNode, ['p:txBody', 'a:bodyPr', 'attrs', attrName])
   if (v !== undefined && v !== null && v !== '') return v
-  if (layoutNode) {
-    v = getTextByPathList(layoutNode, ['p:txBody', 'a:bodyPr', 'attrs', attrName])
-    if (v !== undefined && v !== null && v !== '') return v
-  }
-  if (masterNode) {
-    v = getTextByPathList(masterNode, ['p:txBody', 'a:bodyPr', 'attrs', attrName])
-  }
-  return v
+
+  v = getTextByPathList(layoutNode, ['p:txBody', 'a:bodyPr', 'attrs', attrName])
+  if (v !== undefined && v !== null && v !== '') return v
+
+  return getTextByPathList(masterNode, ['p:txBody', 'a:bodyPr', 'attrs', attrName])
 }
 
-/**
- * @description 将 EMU 字符串转换为 pt（保留 numberToFixed 默认精度）
- */
 function emuToPt(emuStr) {
   if (emuStr === undefined || emuStr === null || emuStr === '') return null
   const v = parseInt(emuStr, 10)
@@ -39,22 +25,40 @@ function emuToPt(emuStr) {
   return numberToFixed(v * RATIO_EMUs_Points)
 }
 
-/**
- * @description 读取文本框 a:bodyPr 四边距（lIns/tIns/rIns/bIns），并转换为 pt
- * 解析顺序：当前节点 -> layout -> master（逐边级联）
- */
 export function getTextInsets(node, slideLayoutSpNode, slideMasterSpNode) {
-  if (!node || !node['p:txBody']) return null
+  const nodeBodyPr = getTextByPathList(node, ['p:txBody', 'a:bodyPr'])
+  const layoutBodyPr = getTextByPathList(slideLayoutSpNode, ['p:txBody', 'a:bodyPr'])
+  const masterBodyPr = getTextByPathList(slideMasterSpNode, ['p:txBody', 'a:bodyPr'])
 
-  const li = pickInsetAttr(node, slideLayoutSpNode, slideMasterSpNode, 'lIns') ?? DEFAULT_INSET_EMU.lIns
-  const ti = pickInsetAttr(node, slideLayoutSpNode, slideMasterSpNode, 'tIns') ?? DEFAULT_INSET_EMU.tIns
-  const ri = pickInsetAttr(node, slideLayoutSpNode, slideMasterSpNode, 'rIns') ?? DEFAULT_INSET_EMU.rIns
-  const bi = pickInsetAttr(node, slideLayoutSpNode, slideMasterSpNode, 'bIns') ?? DEFAULT_INSET_EMU.bIns
+  if (!nodeBodyPr) {
+    if (!layoutBodyPr) {
+      if (!masterBodyPr) return null
+    }
+  }
 
-  const l = emuToPt(li) ?? 0
-  const t = emuToPt(ti) ?? 0
-  const r = emuToPt(ri) ?? 0
-  const b = emuToPt(bi) ?? 0
+  let li = getInsetAttr(node, slideLayoutSpNode, slideMasterSpNode, 'lIns')
+  if (li === undefined || li === null || li === '') li = DEFAULT_INSET_EMU.lIns
+
+  let ti = getInsetAttr(node, slideLayoutSpNode, slideMasterSpNode, 'tIns')
+  if (ti === undefined || ti === null || ti === '') ti = DEFAULT_INSET_EMU.tIns
+
+  let ri = getInsetAttr(node, slideLayoutSpNode, slideMasterSpNode, 'rIns')
+  if (ri === undefined || ri === null || ri === '') ri = DEFAULT_INSET_EMU.rIns
+
+  let bi = getInsetAttr(node, slideLayoutSpNode, slideMasterSpNode, 'bIns')
+  if (bi === undefined || bi === null || bi === '') bi = DEFAULT_INSET_EMU.bIns
+
+  let l = emuToPt(li)
+  if (l === null) l = 0
+
+  let t = emuToPt(ti)
+  if (t === null) t = 0
+
+  let r = emuToPt(ri)
+  if (r === null) r = 0
+
+  let b = emuToPt(bi)
+  if (b === null) b = 0
 
   return { l, t, r, b }
 }

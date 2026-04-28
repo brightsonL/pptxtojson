@@ -1,4 +1,4 @@
-# 🎨 pptxtojson
+﻿# 🎨 pptxtojson
 
 [![npm-version](https://img.shields.io/npm/v/pptxtojson)](https://www.npmjs.com/package/pptxtojson)
 [![npm download](https://img.shields.io/npm/dm/pptxtojson)](https://www.npmjs.com/package/pptxtojson)
@@ -204,6 +204,7 @@ func()
 					- `shape`：文本框高度会根据文本内容自动调整
 					- `text`：文本框大小固定，字号会自动缩放以适应文本框（注：autoFit不存在时，也会固定文本框大小，但字号不会缩放）
 				- 字体缩放比例（type='text'专有，默认为1） `fontScale`
+			- 文本内边距（4边） `textInset`
 			- 超链接 `link`
 
 		- 图片
@@ -247,6 +248,7 @@ func()
 			- 形状调整参数 `keypoints`
 			- 元素名 `name`
 			- 自动调整大小 `autoFit`
+			- 文本内边距（4边） `textInset`
 			- 超链接 `link`
 
 		- 表格

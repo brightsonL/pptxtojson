@@ -1,4 +1,4 @@
-import { getHorizontalAlign, getParagraphSpacing } from './paragraph'
+import { getHorizontalAlign, getParagraphSpacing, getParagraphIndent } from './paragraph'
 import { getTextByPathList } from './utils'
 
 import {
@@ -60,12 +60,17 @@ export function genTextBody(textBodyNode, spNode, slideLayoutSpNode, slideMaster
 
     const align = getHorizontalAlign(pNode, spNode, type, slideLayoutSpNode, slideMasterSpNode, warpObj)
     const spacing = getParagraphSpacing(pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, warpObj)
+    const indent = getParagraphIndent(pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, warpObj)
 
     let styleText = `text-align: ${align};`
     if (spacing) {
       if (spacing.lineSpacing) styleText += `line-height: ${spacing.lineSpacing};`
       if (spacing.spaceBefore) styleText += `margin-top: ${spacing.spaceBefore};`
       if (spacing.spaceAfter) styleText += `margin-bottom: ${spacing.spaceAfter};`
+    }
+    if (indent) {
+      if (indent.marginLeft) styleText += `margin-left: ${indent.marginLeft};`
+      if (indent.textIndent) styleText += `text-indent: ${indent.textIndent};`
     }
 
     const listType = getListType(pNode)

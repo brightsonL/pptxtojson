@@ -210,7 +210,7 @@ export interface ChartItem {
   values: ChartValue[]
   xlabels: ChartXLabel
 }
-export type ScatterChartData = [number[], number[]]
+export type ScatterChartData = number[][]
 export interface CommonChart {
   type: 'chart'
   left: number

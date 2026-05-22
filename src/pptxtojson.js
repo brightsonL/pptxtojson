@@ -559,6 +559,8 @@ async function processMathNode(node, warpObj, source) {
   const { width, height } = getSize(xfrmNode, undefined, undefined)
 
   const oMath = findOMath(choice)[0]
+  if (!oMath) return null
+
   const latex = latexFormart(parseOMath(oMath))
 
   const blipFill = getTextByPathList(fallback, ['p:sp', 'p:spPr', 'a:blipFill'])

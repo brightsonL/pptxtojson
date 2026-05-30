@@ -22,6 +22,7 @@ export async function parse(file, options = {}) {
   const loadedImages = {}
   const loadedVideos = {}
   const loadedAudios = {}
+  const xmlCache = {}
   const parseOptions = {
     ...options,
     imageMode: options.imageMode || 'base64',
@@ -37,7 +38,7 @@ export async function parse(file, options = {}) {
   const usedFonts = await getUsedFonts(zip)
 
   for (const filename of filesInfo.slides) {
-    const singleSlide = await processSingleSlide(zip, filename, themeContent, defaultTextStyle, loadedImages, loadedVideos, loadedAudios, parseOptions)
+    const singleSlide = await processSingleSlide(zip, filename, themeContent, defaultTextStyle, loadedImages, loadedVideos, loadedAudios, parseOptions, xmlCache)
     slides.push(singleSlide)
   }
 
@@ -143,7 +144,16 @@ async function getTheme(zip) {
   return { themeContent, themeColors }
 }
 
-async function processSingleSlide(zip, sldFileName, themeContent, defaultTextStyle, loadedImages, loadedVideos, loadedAudios, options) {
+async function readXmlFileCached(zip, filename, xmlCache) {
+  if (!filename) return null
+  if (Object.prototype.hasOwnProperty.call(xmlCache, filename)) return xmlCache[filename]
+
+  const content = await readXmlFile(zip, filename)
+  xmlCache[filename] = content
+  return content
+}
+
+async function processSingleSlide(zip, sldFileName, themeContent, defaultTextStyle, loadedImages, loadedVideos, loadedAudios, options, xmlCache) {
   const resName = sldFileName.replace('slides/slide', 'slides/_rels/slide') + '.rels'
   const resContent = await readXmlFile(zip, resName)
   let relationshipArray = resContent['Relationships']['Relationship']
@@ -206,10 +216,10 @@ async function processSingleSlide(zip, sldFileName, themeContent, defaultTextSty
   const slideNotesContent = await readXmlFile(zip, noteFilename)
   const note = getNote(slideNotesContent)
 
-  const slideLayoutContent = await readXmlFile(zip, layoutFilename)
-  const slideLayoutTables = await indexNodes(slideLayoutContent)
+  const slideLayoutContent = await readXmlFileCached(zip, layoutFilename, xmlCache)
+  const slideLayoutTables = indexNodes(slideLayoutContent)
   const slideLayoutResFilename = layoutFilename.replace('slideLayouts/slideLayout', 'slideLayouts/_rels/slideLayout') + '.rels'
-  const slideLayoutResContent = await readXmlFile(zip, slideLayoutResFilename)
+  const slideLayoutResContent = await readXmlFileCached(zip, slideLayoutResFilename, xmlCache)
   relationshipArray = slideLayoutResContent['Relationships']['Relationship']
   if (relationshipArray.constructor !== Array) relationshipArray = [relationshipArray]
 
@@ -231,11 +241,11 @@ async function processSingleSlide(zip, sldFileName, themeContent, defaultTextSty
     }
   }
 
-  const slideMasterContent = await readXmlFile(zip, masterFilename)
+  const slideMasterContent = await readXmlFileCached(zip, masterFilename, xmlCache)
   const slideMasterTextStyles = getTextByPathList(slideMasterContent, ['p:sldMaster', 'p:txStyles'])
   const slideMasterTables = indexNodes(slideMasterContent)
   const slideMasterResFilename = masterFilename.replace('slideMasters/slideMaster', 'slideMasters/_rels/slideMaster') + '.rels'
-  const slideMasterResContent = await readXmlFile(zip, slideMasterResFilename)
+  const slideMasterResContent = await readXmlFileCached(zip, slideMasterResFilename, xmlCache)
   relationshipArray = slideMasterResContent['Relationships']['Relationship']
   if (relationshipArray.constructor !== Array) relationshipArray = [relationshipArray]
 
@@ -275,7 +285,7 @@ async function processSingleSlide(zip, sldFileName, themeContent, defaultTextSty
     }
   }
 
-  const tableStyles = await readXmlFile(zip, 'ppt/tableStyles.xml')
+  const tableStyles = await readXmlFileCached(zip, 'ppt/tableStyles.xml', xmlCache)
 
   const slideContent = await readXmlFile(zip, sldFileName)
   const nodes = slideContent['p:sld']['p:cSld']['p:spTree']

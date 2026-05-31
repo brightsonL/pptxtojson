@@ -408,7 +408,7 @@ function getNote(noteContent) {
           text += `<${listType}>`
           listTypes[listLevel] = listType
         }
-        text += `<li style="text-align:${align};">`
+        text += `<li><p style="text-align:${align};">`
       }
       else {
         while (listTypes.length > 0) {
@@ -426,7 +426,7 @@ function getNote(noteContent) {
         }
       }
 
-      if (listType) text += '</li>'
+      if (listType) text += '</p></li>'
       else text += '</p>'
     }
     while (listTypes.length > 0) {

@@ -61,6 +61,8 @@ export function genTextBody(textBodyNode, spNode, slideLayoutSpNode, slideMaster
     const align = getHorizontalAlign(pNode, spNode, type, slideLayoutSpNode, slideMasterSpNode, warpObj)
     const spacing = getParagraphSpacing(pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, warpObj)
     const indent = getParagraphIndent(pNode, textBodyNode, slideLayoutSpNode, slideMasterSpNode, type, slideMasterTextStyles, warpObj)
+    const listType = getListType(pNode)
+    const listLevel = getListLevel(pNode)
 
     let styleText = `text-align: ${align};`
     if (spacing) {
@@ -69,12 +71,9 @@ export function genTextBody(textBodyNode, spNode, slideLayoutSpNode, slideMaster
       if (spacing.spaceAfter) styleText += `margin-bottom: ${spacing.spaceAfter};`
     }
     if (indent) {
-      if (indent.marginLeft) styleText += `margin-left: ${indent.marginLeft};`
-      if (indent.textIndent) styleText += `text-indent: ${indent.textIndent};`
+      if (!listType && indent.marginLeft) styleText += `margin-left: ${indent.marginLeft};`
+      if (!listType && indent.textIndent) styleText += `text-indent: ${indent.textIndent};`
     }
-
-    const listType = getListType(pNode)
-    const listLevel = getListLevel(pNode)
 
     if (listType) {
       while (listTypes.length > listLevel + 1) {
@@ -91,7 +90,7 @@ export function genTextBody(textBodyNode, spNode, slideLayoutSpNode, slideMaster
         text += `<${listType}>`
         listTypes[listLevel] = listType
       }
-      text += `<li style="${styleText}">`
+      text += `<li><p style="${styleText}">`
     }
     else {
       while (listTypes.length > 0) {
@@ -137,7 +136,7 @@ export function genTextBody(textBodyNode, spNode, slideLayoutSpNode, slideMaster
       }
     }
 
-    if (listType) text += '</li>'
+    if (listType) text += '</p></li>'
     else text += '</p>'
   }
   while (listTypes.length > 0) {

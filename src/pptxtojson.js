@@ -618,8 +618,8 @@ async function processGroupSpNode(node, warpObj, source, parentGroupHierarchy = 
   if (rotate) rotate = angleToDegrees(rotate)
 
   // 计算缩放因子
-  const ws = cx / chcx
-  const hs = cy / chcy
+  const ws = chcx === 0 ? 0 : cx / chcx
+  const hs = chcy === 0 ? 0 : cy / chcy
 
   // 构建当前组合层级（将当前组合添加到父级层级中）
   const currentGroupHierarchy = [...parentGroupHierarchy, node]
@@ -638,30 +638,44 @@ async function processGroupSpNode(node, warpObj, source, parentGroupHierarchy = 
     }
   }
 
+  const transformGroupedElement = (element, offsetX = 0, offsetY = 0) => {
+    const elementRotate = element.rotate || 0
+    const normalizedRotate = ((elementRotate % 360) + 360) % 360
+    const isUniformScale = Math.abs(ws - hs) < 0.000001
+    const shouldSwapDimensions = normalizedRotate === 90 || normalizedRotate === 270
+    const centerX = element.left + element.width / 2
+    const centerY = element.top + element.height / 2
+    const nextCenterX = (centerX - offsetX) * ws
+    const nextCenterY = (centerY - offsetY) * hs
+    const widthScale = shouldSwapDimensions && !isUniformScale ? hs : ws
+    const heightScale = shouldSwapDimensions && !isUniformScale ? ws : hs
+    const width = element.width * widthScale
+    const height = element.height * heightScale
+
+    const transformed = {
+      ...element,
+      left: numberToFixed(nextCenterX - width / 2),
+      top: numberToFixed(nextCenterY - height / 2),
+      width: numberToFixed(width),
+      height: numberToFixed(height),
+    }
+    return transformed
+  }
+
   const processedElements = elements.map(element => ({
-    ...element,
-    left: numberToFixed((element.left - chx) * ws),
-    top: numberToFixed((element.top - chy) * hs),
-    width: numberToFixed(element.width * ws),
-    height: numberToFixed(element.height * hs),
+    ...transformGroupedElement(element, chx, chy),
     ...(element.type === 'group' && element.elements ? {
-      elements: processNestedGroupElements(element.elements, ws, hs)
+      elements: processNestedGroupElements(element.elements)
     } : {})
   }))
 
-  function processNestedGroupElements(elements, ws, hs, depth = 0) {
+  function processNestedGroupElements(elements, depth = 0) {
     if (depth > 10) return elements
 
     return elements.map(element => {
-      const processed = {
-        ...element,
-        left: numberToFixed(element.left * ws),
-        top: numberToFixed(element.top * hs),
-        width: numberToFixed(element.width * ws),
-        height: numberToFixed(element.height * hs),
-      }
+      const processed = transformGroupedElement(element)
       if (element.type === 'group' && element.elements) {
-        processed.elements = processNestedGroupElements(element.elements, ws, hs, depth + 1)
+        processed.elements = processNestedGroupElements(element.elements, depth + 1)
       }
       return processed
     })

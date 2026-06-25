@@ -793,7 +793,11 @@ async function genShape(node, slideLayoutSpNode, slideMasterSpNode, name, type, 
   if (node['p:txBody']) content = genTextBody(node['p:txBody'], node, slideLayoutSpNode, slideMasterSpNode, type, warpObj)
 
   const { borderColor, borderWidth, borderType, strokeDasharray } = getBorder(node, type, warpObj)
-  const fill = await getShapeFill(node, warpObj, source, groupHierarchy)
+  const fill = await getShapeFill(node, warpObj, source, {
+    groupHierarchy,
+    slideLayoutSpNode,
+    slideMasterSpNode,
+  })
 
   let shadow
   const outerShdwNode = getTextByPathList(node, ['p:spPr', 'a:effectLst', 'a:outerShdw'])

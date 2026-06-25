@@ -7,7 +7,7 @@ import { getVerticalAlign, getTextAutoFit } from './paragraph'
 import { getTextInsets } from './textInsets'
 import { getPosition, getSize } from './position'
 import { genTextBody, getTextNodeValue } from './text'
-import { getCustomShapePath, identifyShape } from './shape'
+import { getCustomShapePath, identifyShape, isStrokeOnlyCustomGeometry } from './shape'
 import { extractFileExtension, getTextByPathList, angleToDegrees, isVideoLink, escapeHtml, hasValidText, numberToFixed } from './utils'
 import { getShadow } from './shadow'
 import { getTableBorders, getTableCellParams, getTableRowParams } from './table'
@@ -841,12 +841,15 @@ async function genShape(node, slideLayoutSpNode, slideMasterSpNode, name, type, 
     const d = getCustomShapePath(custShapType, w, h)
     if (!isHasValidText) data.content = ''
 
-    return {
+    const customShapeData = {
       ...data,
       type: 'shape',
       shapType: 'custom',
       path: d,
     }
+    if (isStrokeOnlyCustomGeometry(custShapType)) customShapeData.strokeOnly = true
+
+    return customShapeData
   }
 
   let shapePath = ''

@@ -240,6 +240,7 @@ func()
 			- 非实线边框样式 `borderStrokeDasharray`
 			- 阴影 `shadow`
 			- 填充（颜色、图片、渐变、图案） `fill`
+			- 仅描边（无填充） `strokeOnly`
 			- 内容文字（HTML富文本，与文字元素一致） `content`
 			- 垂直翻转 `isFlipV`
 			- 水平翻转 `isFlipH`

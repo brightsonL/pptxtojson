@@ -80,6 +80,7 @@ export interface Shape {
   shapType: string
   vAlign: string
   path?: string
+  strokeOnly?: boolean
   keypoints?: Record<string, number>
   name: string
   order: number

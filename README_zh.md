@@ -259,6 +259,7 @@ func()
 			- 形状类型 `shapType`
 			- 垂直对齐方向 `vAlign`
 			- 形状路径 `path`
+			- 形状路径 viewBox `pathViewBox`
 			- 形状调整参数 `keypoints`
 			- 元素名 `name`
 			- 自动调整大小 `autoFit`

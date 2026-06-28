@@ -61,6 +61,13 @@ export interface TextInset {
   b: number
 }
 
+export interface PathViewBox {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
 export interface Shape {
   type: 'shape'
   left: number
@@ -80,6 +87,7 @@ export interface Shape {
   shapType: string
   vAlign: string
   path?: string
+  pathViewBox?: PathViewBox
   strokeOnly?: boolean
   keypoints?: Record<string, number>
   name: string

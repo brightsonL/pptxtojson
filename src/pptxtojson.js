@@ -267,7 +267,9 @@ async function processSingleSlide(zip, sldFileName, themeContent, defaultTextSty
     }
   }
 
+  let currentThemeContent = themeContent
   if (themeFilename) {
+    currentThemeContent = currentThemeContent || await readXmlFileCached(zip, themeFilename, xmlCache)
     const themeName = themeFilename.split('/').pop()
     const themeResFileName = themeFilename.replace(themeName, '_rels/' + themeName) + '.rels'
     const themeResContent = await readXmlFile(zip, themeResFileName)
@@ -305,7 +307,7 @@ async function processSingleSlide(zip, sldFileName, themeContent, defaultTextSty
     slideMasterTextStyles,
     layoutResObj,
     masterResObj,
-    themeContent,
+    themeContent: currentThemeContent,
     themeResObj,
     diagramFileCache: {},
     defaultTextStyle,
@@ -775,6 +777,7 @@ async function genShape(node, slideLayoutSpNode, slideMasterSpNode, name, type, 
 
   const { top, left } = getPosition(slideXfrmNode, slideLayoutXfrmNode, slideMasterXfrmNode)
   const { width, height } = getSize(slideXfrmNode, slideLayoutXfrmNode, slideMasterXfrmNode)
+  const pathViewBox = { x: 0, y: 0, width, height }
 
   const isFlipV = getTextByPathList(slideXfrmNode, ['attrs', 'flipV']) === '1'
   const isFlipH = getTextByPathList(slideXfrmNode, ['attrs', 'flipH']) === '1'
@@ -846,6 +849,7 @@ async function genShape(node, slideLayoutSpNode, slideMasterSpNode, name, type, 
       type: 'shape',
       shapType: 'custom',
       path: d,
+      pathViewBox: { x: 0, y: 0, width: w, height: h },
     }
     if (isStrokeOnlyCustomGeometry(custShapType)) customShapeData.strokeOnly = true
 
@@ -854,26 +858,34 @@ async function genShape(node, slideLayoutSpNode, slideMasterSpNode, name, type, 
 
   let shapePath = ''
   if (shapType) shapePath = getShapePath(shapType, width, height, node)
+  const STROKE_ONLY_PRESET_SHAPE_TYPES = ['arc', 'leftBrace', 'rightBrace', 'bracePair', 'leftBracket', 'rightBracket', 'bracketPair']
+  const isStrokeOnlyPresetShape = STROKE_ONLY_PRESET_SHAPE_TYPES.includes(shapType)
 
   if (shapType && (type === 'obj' || !type || shapType !== 'rect')) {
     if (!isHasValidText) data.content = ''
-    return {
+    const shapeData = {
       ...data,
       type: 'shape',
       shapType,
       path: shapePath,
+      pathViewBox,
       keypoints,
     }
+    if (isStrokeOnlyPresetShape) shapeData.strokeOnly = true
+    return shapeData
   }
   if (shapType && !isHasValidText && (fill || borderWidth)) {
-    return {
+    const shapeData = {
       ...data,
       type: 'shape',
       content: '',
       shapType,
       path: shapePath,
+      pathViewBox,
       keypoints,
     }
+    if (isStrokeOnlyPresetShape) shapeData.strokeOnly = true
+    return shapeData
   }
   return {
     ...data,

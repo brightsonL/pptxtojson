@@ -1,4 +1,5 @@
 import tinycolor from 'tinycolor2'
+import { getSolidFill } from './fill'
 import { getSchemeColorFromTheme } from './schemeColor'
 import { getTextByPathList } from './utils'
 
@@ -22,12 +23,8 @@ export function getBorder(node, elType, warpObj) {
     else borderWidth = 1
   }
 
-  let borderColor = getTextByPathList(lineNode, ['a:solidFill', 'a:srgbClr', 'attrs', 'val'])
-  if (!borderColor) {
-    const schemeClrNode = getTextByPathList(lineNode, ['a:solidFill', 'a:schemeClr'])
-    const schemeClr = 'a:' + getTextByPathList(schemeClrNode, ['attrs', 'val'])
-    borderColor = getSchemeColorFromTheme(schemeClr, warpObj)
-  }
+  const solidFill = getTextByPathList(lineNode, ['a:solidFill'])
+  let borderColor = getSolidFill(solidFill, undefined, undefined, warpObj)
 
   if (!borderColor) {
     const schemeClrNode = getTextByPathList(node, ['p:style', 'a:lnRef', 'a:schemeClr'])
@@ -47,7 +44,7 @@ export function getBorder(node, elType, warpObj) {
   }
 
   if (!borderColor) borderColor = '#000000'
-  else borderColor = `#${borderColor}`
+  else if (!borderColor.startsWith('#')) borderColor = `#${borderColor}`
 
   const type = getTextByPathList(lineNode, ['a:prstDash', 'attrs', 'val'])
   let borderType = 'solid'

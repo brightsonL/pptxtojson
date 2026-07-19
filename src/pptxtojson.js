@@ -795,7 +795,7 @@ async function genShape(node, slideLayoutSpNode, slideMasterSpNode, name, type, 
   let content = ''
   if (node['p:txBody']) content = genTextBody(node['p:txBody'], node, slideLayoutSpNode, slideMasterSpNode, type, warpObj)
 
-  const { borderColor, borderWidth, borderType, strokeDasharray } = getBorder(node, type, warpObj)
+  const { borderColor, borderWidth, borderType, strokeDasharray, headEnd, tailEnd } = getBorder(node, type, warpObj)
   const fill = await getShapeFill(node, warpObj, source, {
     groupHierarchy,
     slideLayoutSpNode,
@@ -834,6 +834,8 @@ async function genShape(node, slideLayoutSpNode, slideMasterSpNode, name, type, 
   if (autoFit) data.autoFit = autoFit
   if (link) data.link = link
   if (textInset) data.textInset = textInset
+  if (headEnd) data.headEnd = headEnd
+  if (tailEnd) data.tailEnd = tailEnd
 
   const isHasValidText = data.content && hasValidText(data.content)
 

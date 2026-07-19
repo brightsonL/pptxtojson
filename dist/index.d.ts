@@ -68,6 +68,12 @@ export interface PathViewBox {
   height: number
 }
 
+export interface LineEnd {
+  type: 'none' | 'triangle' | 'stealth' | 'diamond' | 'oval' | 'arrow'
+  width?: 'sm' | 'med' | 'lg'
+  length?: 'sm' | 'med' | 'lg'
+}
+
 export interface Shape {
   type: 'shape'
   left: number
@@ -88,6 +94,8 @@ export interface Shape {
   vAlign: string
   path?: string
   pathViewBox?: PathViewBox
+  headEnd?: LineEnd
+  tailEnd?: LineEnd
   strokeOnly?: boolean
   keypoints?: Record<string, number>
   name: string

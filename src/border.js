@@ -3,6 +3,16 @@ import { getSolidFill } from './fill'
 import { getSchemeColorFromTheme } from './schemeColor'
 import { getTextByPathList } from './utils'
 
+function getLineEnd(node) {
+  const attrs = getTextByPathList(node, ['attrs'])
+  if (!attrs) return undefined
+
+  const lineEnd = { type: attrs.type || 'none' }
+  if (attrs.w) lineEnd.width = attrs.w
+  if (attrs.len) lineEnd.length = attrs.len
+  return lineEnd
+}
+
 export function getBorder(node, elType, warpObj) {
   let lineNode = getTextByPathList(node, ['p:spPr', 'a:ln'])
   if (!lineNode) {
@@ -93,10 +103,15 @@ export function getBorder(node, elType, warpObj) {
     default:
   }
 
+  const headEnd = getLineEnd(getTextByPathList(lineNode, ['a:headEnd']))
+  const tailEnd = getLineEnd(getTextByPathList(lineNode, ['a:tailEnd']))
+
   return {
     borderColor,
     borderWidth,
     borderType,
     strokeDasharray,
+    headEnd,
+    tailEnd,
   }
 }

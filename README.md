@@ -260,6 +260,8 @@ All numeric length values in the output JSON use `pt` (point) as the unit.
 			- Vertical alignment `vAlign`
 			- Shape path `path`
 			- Shape path viewBox `pathViewBox`
+			- Line head endpoint `headEnd`
+			- Line tail endpoint `tailEnd`
 			- Shape adjustment parameters `keypoints`
 			- Element name `name`
 			- Auto fit `autoFit`
